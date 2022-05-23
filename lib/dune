@@ -1,0 +1,6 @@
+(library
+ (name monkey)
+ (public_name monkey.lib)
+ (libraries fmt)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))

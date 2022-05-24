@@ -23,16 +23,59 @@ let read_char lex =
 let make input =
   read_char { input; position = 0; read_position = 0; ch = null_byte }
 
-let next_token lex =
-  let token =
-    match lex.ch with
-    | '=' -> Token.Assign
-    | ';' -> Token.Semicolon
-    | '(' -> Token.LParen
-    | ')' -> Token.RParen
-    | ',' -> Token.Comma
-    | '+' -> Token.Plus
-    | '{' -> Token.LBrace
-    | '}' -> Token.RBrace
-    | _ -> Token.EOF in
-  (read_char lex, token)
+let is_letter ch =
+  ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'
+
+let read_identifier lex =
+  let rec go acc lex =
+    if is_letter lex.ch then
+      go (acc ^ String.make 1 lex.ch) (read_char lex)
+    else
+      (acc, lex) in
+  go "" lex
+
+let is_digit ch = '0' <= ch && ch <= '9'
+
+let read_number lex =
+  let rec go acc lex =
+    if is_digit lex.ch then
+      go (acc ^ String.make 1 lex.ch) (read_char lex)
+    else
+      (int_of_string acc, lex) in
+  go "" lex
+
+let rec skip_whitespace lex =
+  match lex.ch with
+  | ' '
+  | '\t'
+  | '\n'
+  | '\r' ->
+    skip_whitespace (read_char lex)
+  | _ -> lex
+
+let next_token l =
+  let lex = skip_whitespace l in
+  match lex.ch with
+  | '=' -> (read_char lex, Token.Assign)
+  | ';' -> (read_char lex, Token.Semicolon)
+  | '(' -> (read_char lex, Token.LParen)
+  | ')' -> (read_char lex, Token.RParen)
+  | ',' -> (read_char lex, Token.Comma)
+  | '+' -> (read_char lex, Token.Plus)
+  | '{' -> (read_char lex, Token.LBrace)
+  | '}' -> (read_char lex, Token.RBrace)
+  | '\x00' -> (read_char lex, Token.EOF)
+  | _ ->
+    if is_letter lex.ch then
+      let literal, lex = read_identifier lex in
+      let token =
+        match literal with
+        | "fn" -> Token.Function
+        | "let" -> Token.Let
+        | _ -> Token.Ident literal in
+      (lex, token)
+    else if is_digit lex.ch then
+      let literal, lex = read_number lex in
+      (lex, Token.Int literal)
+    else
+      (read_char lex, Token.Illegal (String.make 1 lex.ch))

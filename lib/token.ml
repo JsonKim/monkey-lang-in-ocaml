@@ -7,6 +7,12 @@ type t =
   (* 연산자 *)
   | Assign
   | Plus
+  | Minus
+  | Bang
+  | Asterisk
+  | Slash
+  | LT
+  | GT
   (* 구분자 *)
   | Comma
   | Semicolon

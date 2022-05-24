@@ -57,11 +57,17 @@ let next_token l =
   let lex = skip_whitespace l in
   match lex.ch with
   | '=' -> (read_char lex, Token.Assign)
+  | '+' -> (read_char lex, Token.Plus)
+  | '-' -> (read_char lex, Token.Minus)
+  | '!' -> (read_char lex, Token.Bang)
+  | '/' -> (read_char lex, Token.Slash)
+  | '*' -> (read_char lex, Token.Asterisk)
+  | '<' -> (read_char lex, Token.LT)
+  | '>' -> (read_char lex, Token.GT)
   | ';' -> (read_char lex, Token.Semicolon)
   | '(' -> (read_char lex, Token.LParen)
   | ')' -> (read_char lex, Token.RParen)
   | ',' -> (read_char lex, Token.Comma)
-  | '+' -> (read_char lex, Token.Plus)
   | '{' -> (read_char lex, Token.LBrace)
   | '}' -> (read_char lex, Token.RBrace)
   | '\x00' -> (read_char lex, Token.EOF)

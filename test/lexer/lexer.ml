@@ -17,7 +17,9 @@ let test_next_token () =
      let add = fn(x, y) {\n\
     \  x + y;\n\
      };\n\n\
-     let result = add(five, ten);" in
+     let result = add(five, ten);\n\
+     !-/*5;\n\
+     5 < 10 > 5;\n" in
   let check = Alcotest.(check (list token_testable)) in
   let open Token in
   check "same token"
@@ -57,6 +59,18 @@ let test_next_token () =
       Comma;
       Ident "ten";
       RParen;
+      Semicolon;
+      Bang;
+      Minus;
+      Slash;
+      Asterisk;
+      Int 5;
+      Semicolon;
+      Int 5;
+      LT;
+      Int 10;
+      GT;
+      Int 5;
       Semicolon;
       EOF;
     ]

@@ -74,12 +74,7 @@ let next_token l =
   | _ ->
     if is_letter lex.ch then
       let literal, lex = read_identifier lex in
-      let token =
-        match literal with
-        | "fn" -> Token.Function
-        | "let" -> Token.Let
-        | _ -> Token.Ident literal in
-      (lex, token)
+      (lex, Token.keywords literal)
     else if is_digit lex.ch then
       let literal, lex = read_number lex in
       (lex, Token.Int literal)

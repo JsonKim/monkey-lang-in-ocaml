@@ -19,7 +19,12 @@ let test_next_token () =
      };\n\n\
      let result = add(five, ten);\n\
      !-/*5;\n\
-     5 < 10 > 5;\n" in
+     5 < 10 > 5;\n\n\
+     if (5 < 10) {\n\
+    \  return true;\n\
+     } else {\n\
+    \  return false;\n\
+     }" in
   let check = Alcotest.(check (list token_testable)) in
   let open Token in
   check "same token"
@@ -72,6 +77,23 @@ let test_next_token () =
       GT;
       Int 5;
       Semicolon;
+      If;
+      LParen;
+      Int 5;
+      LT;
+      Int 10;
+      RParen;
+      LBrace;
+      Return;
+      True;
+      Semicolon;
+      RBrace;
+      Else;
+      LBrace;
+      Return;
+      False;
+      Semicolon;
+      RBrace;
       EOF;
     ]
     (code_to_tokens code)

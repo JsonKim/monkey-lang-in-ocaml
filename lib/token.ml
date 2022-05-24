@@ -23,6 +23,22 @@ type t =
   (* 예약어 *)
   | Function
   | Let
+  | True
+  | False
+  | If
+  | Else
+  | Return
 [@@deriving show, eq]
+
+let keywords literal =
+  match literal with
+  | "fn" -> Function
+  | "let" -> Let
+  | "true" -> True
+  | "false" -> False
+  | "if" -> If
+  | "else" -> Else
+  | "return" -> Return
+  | _ -> Ident literal
 
 let pp ppf tk = Fmt.pf ppf "Token =%s" (show tk)

@@ -24,7 +24,9 @@ let test_next_token () =
     \  return true;\n\
      } else {\n\
     \  return false;\n\
-     }" in
+     }\n\n\
+     10 == 10;\n\
+     10 != 9;\n" in
   let check = Alcotest.(check (list token_testable)) in
   let open Token in
   check "same token"
@@ -94,6 +96,14 @@ let test_next_token () =
       False;
       Semicolon;
       RBrace;
+      Int 10;
+      Eq;
+      Int 10;
+      Semicolon;
+      Int 10;
+      Not_Eq;
+      Int 9;
+      Semicolon;
       EOF;
     ]
     (code_to_tokens code)

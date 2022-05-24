@@ -13,6 +13,8 @@ type t =
   | Slash
   | LT
   | GT
+  | Eq
+  | Not_Eq
   (* 구분자 *)
   | Comma
   | Semicolon

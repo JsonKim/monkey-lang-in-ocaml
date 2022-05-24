@@ -7,12 +7,14 @@ type t = {
   ch : char;
 }
 
+let peek_char lex =
+  if lex.read_position >= String.length lex.input then
+    null_byte
+  else
+    String.get lex.input lex.read_position
+
 let read_char lex =
-  let ch =
-    if lex.read_position >= String.length lex.input then
-      null_byte
-    else
-      String.get lex.input lex.read_position in
+  let ch = peek_char lex in
   {
     lex with
     position = lex.read_position;
@@ -56,10 +58,18 @@ let rec skip_whitespace lex =
 let next_token l =
   let lex = skip_whitespace l in
   match lex.ch with
-  | '=' -> (read_char lex, Token.Assign)
+  | '=' ->
+    if peek_char lex == '=' then
+      (read_char (read_char lex), Token.Eq)
+    else
+      (read_char lex, Token.Assign)
   | '+' -> (read_char lex, Token.Plus)
   | '-' -> (read_char lex, Token.Minus)
-  | '!' -> (read_char lex, Token.Bang)
+  | '!' ->
+    if peek_char lex == '=' then
+      (read_char (read_char lex), Token.Not_Eq)
+    else
+      (read_char lex, Token.Bang)
   | '/' -> (read_char lex, Token.Slash)
   | '*' -> (read_char lex, Token.Asterisk)
   | '<' -> (read_char lex, Token.LT)

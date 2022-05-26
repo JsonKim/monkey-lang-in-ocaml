@@ -42,5 +42,3 @@ let keywords literal =
   | "else" -> Else
   | "return" -> Return
   | _ -> Ident literal
-
-let pp ppf tk = Fmt.pf ppf "Token =%s" (show tk)

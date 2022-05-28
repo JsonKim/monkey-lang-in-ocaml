@@ -1,7 +1,7 @@
 type node =
   | Statement  of statement
   | Expression of expression
-[@@deriving show]
+[@@deriving show, eq]
 
 and statement =
   | LetStatement of {

@@ -1,4 +1,4 @@
-type parser = {
+type t = {
   l : Lexer.t;
   cur_token : Token.t;
   peek_token : Token.t;

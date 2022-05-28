@@ -4,10 +4,11 @@ type node =
 [@@deriving show, eq]
 
 and statement =
-  | LetStatement of {
+  | LetStatement    of {
       identifier : expression;
       value : expression;
     }
+  | ReturnStatement of { value : expression }
 [@@deriving show]
 
 and expression =

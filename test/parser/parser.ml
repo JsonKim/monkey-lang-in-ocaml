@@ -8,7 +8,6 @@ let ast_testable = Alcotest.testable Ast.pp_statement Ast.equal_statement
 
 let test_let_statements () =
   let code = "\nlet x = 5;\nlet y = 10;\nlet foobar = 8383838;\n" in
-  print_endline code;
   Alcotest.(check (list ast_testable))
     "same ast"
     Ast.
@@ -20,9 +19,25 @@ let test_let_statements () =
       ]
     (Lexer.make code |> To_test.ast)
 
+let test_return_statements () =
+  let code = "\nreturn 5;\nreturn 10;\nreturn 9933222;\n" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    Ast.
+      [
+        ReturnStatement { value = Empty };
+        ReturnStatement { value = Empty };
+        ReturnStatement { value = Empty };
+      ]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
   run "Parser"
     [
-      ("parser test", [test_case "parse LetStatement" `Slow test_let_statements]);
+      ( "parser test",
+        [
+          test_case "parse LetStatement" `Slow test_let_statements;
+          test_case "parse ReturnStatement" `Slow test_return_statements;
+        ] );
     ]

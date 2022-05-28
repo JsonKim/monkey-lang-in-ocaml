@@ -56,9 +56,18 @@ let parse_let_statement p =
       (p, None)
   | _ -> (p, None)
 
+let parse_return_statement p =
+  let rec go p' =
+    if cur_token_is Token.Semicolon p' then
+      p'
+    else
+      go (next_token p') in
+  (go p, Some (Ast.ReturnStatement { value = Ast.Empty }))
+
 let parse_statement p =
   match p.cur_token with
   | Token.Let -> parse_let_statement p
+  | Token.Return -> parse_return_statement p
   | _ -> (p, None)
 
 let parse_program p =

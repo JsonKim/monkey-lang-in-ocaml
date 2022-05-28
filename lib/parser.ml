@@ -6,7 +6,8 @@ type parser = {
 }
 
 let next_token p =
-  { p with cur_token = p.peek_token; peek_token = snd (Lexer.next_token p.l) }
+  let l, peek_token = Lexer.next_token p.l in
+  { p with l; cur_token = p.peek_token; peek_token }
 
 (*
 두 개가 같음

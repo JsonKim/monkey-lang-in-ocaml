@@ -31,13 +31,33 @@ let test_return_statements () =
       ]
     (Lexer.make code |> To_test.ast)
 
+let test_identifier_expression () =
+  let code = "foobar;" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    Ast.[ExpressionStatement { expression = Identifier { value = "foobar" } }]
+    (Lexer.make code |> To_test.ast)
+
+let test_integer_literal_expression () =
+  let code = "5;" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    Ast.[ExpressionStatement { expression = IntegerLiteral { value = 5 } }]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
+  test_let_statements |> ignore;
+  test_return_statements |> ignore;
   run "Parser"
     [
       ( "parser test",
         [
-          test_case "parse LetStatement" `Slow test_let_statements;
-          test_case "parse ReturnStatement" `Slow test_return_statements;
+          (* test_case "parse LetStatement" `Slow test_let_statements;
+             test_case "parse ReturnStatement" `Slow test_return_statements; *)
+          test_case "parse IdentifireExpression" `Slow
+            test_identifier_expression;
+          test_case "parse IntegerLiteralExpression" `Slow
+            test_integer_literal_expression;
         ] );
     ]

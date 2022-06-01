@@ -4,16 +4,18 @@ type node =
 [@@deriving show, eq]
 
 and statement =
-  | LetStatement    of {
+  | LetStatement        of {
       identifier : expression;
       value : expression;
     }
-  | ReturnStatement of { value : expression }
+  | ReturnStatement     of { value : expression }
+  | ExpressionStatement of { expression : expression }
 [@@deriving show]
 
 and expression =
   | Empty
-  | Identifier of { value : string }
+  | Identifier     of { value : string }
+  | IntegerLiteral of { value : int }
 [@@deriving show]
 
 type program = Program of statement list

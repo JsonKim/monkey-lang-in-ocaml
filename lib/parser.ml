@@ -5,6 +5,27 @@ type t = {
   errors : string list;
 }
 
+let prefixPrecedence = 7
+let lowest = 1
+
+let precedence tok =
+  match tok with
+  | Token.Eq
+  | Token.Not_Eq ->
+    2
+  | Token.LT
+  | Token.GT ->
+    3
+  | Token.Plus
+  | Token.Minus ->
+    4
+  | Token.Slash
+  | Token.Asterisk ->
+    5
+  | Token.LParen -> 6
+  | Token.LBrace -> 8
+  | _ -> lowest
+
 let next_token p =
   let l, peek_token = Lexer.next_token p.l in
   { p with l; cur_token = p.peek_token; peek_token }
@@ -41,6 +62,8 @@ let peek_error t p =
     ^ " instead" in
   { p with errors = p.errors @ [msg] }
 
+let parse_error msg p = { p with errors = p.errors @ [msg] }
+
 let expect_token t p =
   if peek_token_is t p then (next_token p, true) else (peek_error t p, false)
 
@@ -58,17 +81,54 @@ let parse_let_statement p =
 
 let parse_return_statement p =
   let rec go p' =
-    if cur_token_is Token.Semicolon p' then
+    if p' |> cur_token_is Token.Semicolon then
       p'
     else
-      go (next_token p') in
-  (go p, Some (Ast.ReturnStatement { value = Ast.Empty }))
+      p' |> next_token |> go in
+  (p |> next_token |> go, Some (Ast.ReturnStatement { value = Ast.Empty }))
+
+let parse_identifier p =
+  match p.cur_token with
+  | Token.Ident value -> (p, Some (Ast.Identifier { value }))
+  | _ ->
+    ( parse_error
+        ("parse error: not identifier, cur_token: " ^ Token.show p.cur_token)
+        p,
+      None )
+
+let parse_int p =
+  match p.cur_token with
+  | Token.Int value -> (p, Some (Ast.IntegerLiteral { value }))
+  | _ ->
+    ( parse_error
+        ("parse error: not int, cur_token: " ^ Token.show p.cur_token)
+        p,
+      None )
+
+let prefix_parse_fns p =
+  match p.cur_token with
+  | Token.Ident _ -> parse_identifier p
+  | Token.Int _ -> parse_int p
+  | _ ->
+    ( parse_error
+        ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
+        p,
+      None )
+
+let parse_expression _precedence p = prefix_parse_fns p
+
+let parse_expression_statement p =
+  match parse_expression lowest p with
+  | p, Some expression ->
+    let p = if peek_token_is Token.Semicolon p then next_token p else p in
+    (p, Some (Ast.ExpressionStatement { expression }))
+  | p, None -> (p, None)
 
 let parse_statement p =
   match p.cur_token with
   | Token.Let -> parse_let_statement p
   | Token.Return -> parse_return_statement p
-  | _ -> (p, None)
+  | _ -> parse_expression_statement p
 
 let parse_program p =
   let rec go acc p' =

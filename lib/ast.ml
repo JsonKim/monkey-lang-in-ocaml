@@ -16,6 +16,10 @@ and expression =
   | Empty
   | Identifier     of { value : string }
   | IntegerLiteral of { value : int }
+  | Prefix         of {
+      token : Token.t;
+      right : expression;
+    }
 [@@deriving show]
 
 type program = Program of statement list

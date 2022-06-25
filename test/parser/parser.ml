@@ -45,6 +45,26 @@ let test_integer_literal_expression () =
     Ast.[ExpressionStatement { expression = IntegerLiteral { value = 5 } }]
     (Lexer.make code |> To_test.ast)
 
+let test_prefix_expression () =
+  let code = "!5;\n-15;" in
+  let open Ast in
+  let open Token in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      ExpressionStatement
+        {
+          expression =
+            Prefix { token = Bang; right = IntegerLiteral { value = 5 } };
+        };
+      ExpressionStatement
+        {
+          expression =
+            Prefix { token = Minus; right = IntegerLiteral { value = 15 } };
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
   test_let_statements |> ignore;
@@ -59,5 +79,6 @@ let () =
             test_identifier_expression;
           test_case "parse IntegerLiteralExpression" `Slow
             test_integer_literal_expression;
+          test_case "parse PrefixExpression" `Slow test_prefix_expression;
         ] );
     ]

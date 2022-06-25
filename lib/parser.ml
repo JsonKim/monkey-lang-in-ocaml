@@ -105,17 +105,24 @@ let parse_int p =
         p,
       None )
 
-let prefix_parse_fns p =
+let rec prefix_parse_fns p =
   match p.cur_token with
   | Token.Ident _ -> parse_identifier p
   | Token.Int _ -> parse_int p
+  | Token.Bang
+  | Token.Minus -> (
+    let token = p.cur_token in
+    let p = next_token p in
+    match parse_expression prefixPrecedence p with
+    | _, Some right -> (p, Some (Ast.Prefix { token; right }))
+    | _, None -> (p, None))
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
         p,
       None )
 
-let parse_expression _precedence p = prefix_parse_fns p
+and parse_expression _precedence p = prefix_parse_fns p
 
 let parse_expression_statement p =
   match parse_expression lowest p with

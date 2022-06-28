@@ -20,6 +20,11 @@ and expression =
       token : Token.t;
       right : expression;
     }
+  | Infix          of {
+      token : Token.t;
+      left : expression;
+      right : expression;
+    }
 [@@deriving show]
 
 type program = Program of statement list

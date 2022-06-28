@@ -53,6 +53,9 @@ let peek_token_is t p =
   | Token.Ident _, Token.Ident _ -> true
   | _ -> p.peek_token == t
 
+let peek_precedence p = precedence p.peek_token
+let cur_precedence p = precedence p.cur_token
+
 let peek_error t p =
   let msg =
     "expected next token to be "
@@ -110,19 +113,60 @@ let rec prefix_parse_fns p =
   | Token.Ident _ -> parse_identifier p
   | Token.Int _ -> parse_int p
   | Token.Bang
-  | Token.Minus -> (
-    let token = p.cur_token in
-    let p = next_token p in
-    match parse_expression prefixPrecedence p with
-    | _, Some right -> (p, Some (Ast.Prefix { token; right }))
-    | _, None -> (p, None))
+  | Token.Minus ->
+    parse_prefix_expression p
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
         p,
       None )
 
-and parse_expression _precedence p = prefix_parse_fns p
+and infix_parse_fns p =
+  match p.peek_token with
+  | Token.Plus
+  | Token.Minus
+  | Token.Slash
+  | Token.Asterisk
+  | Token.Eq
+  | Token.Not_Eq
+  | Token.LT
+  | Token.GT ->
+    Some parse_infix_expression
+  | _ -> None
+
+and parse_prefix_expression p =
+  let token = p.cur_token in
+  let p = next_token p in
+  match parse_expression prefixPrecedence p with
+  | p, Some right -> (p, Some (Ast.Prefix { token; right }))
+  | p, None -> (p, None)
+
+and parse_infix_expression left p =
+  let precedence = cur_precedence p in
+  let token = p.cur_token in
+  let p = next_token p in
+  match parse_expression precedence p with
+  | p, Some right -> (p, Some (Ast.Infix { token; left; right }))
+  | p, None -> (p, None)
+
+and parse_expression precedence p =
+  let rec go p left =
+    if
+      peek_token_is Token.Semicolon p == false && precedence < peek_precedence p
+    then
+      match infix_parse_fns p with
+      | Some infix -> (
+        let p = next_token p in
+        let p, left = infix left p in
+        match left with
+        | Some left -> go p left
+        | None -> (p, None))
+      | None -> (p, Some left)
+    else
+      (p, Some left) in
+  match prefix_parse_fns p with
+  | p, None -> (p, None)
+  | p, Some left -> go p left
 
 let parse_expression_statement p =
   match parse_expression lowest p with

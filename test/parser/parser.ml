@@ -66,7 +66,7 @@ let test_prefix_expression () =
     (Lexer.make code |> To_test.ast)
 
 let test_infix_expression () =
-  let code = "1 + 2 + 3;\n-a * b" in
+  let code = "1 + 2 + 3;\n-a * b\nx + y * z" in
   let open Ast in
   let open Token in
   Alcotest.(check (list ast_testable))
@@ -97,6 +97,22 @@ let test_infix_expression () =
                 left =
                   Prefix { token = Minus; right = Identifier { value = "a" } };
                 right = Identifier { value = "b" };
+              };
+        };
+      ExpressionStatement
+        {
+          expression =
+            Infix
+              {
+                token = Plus;
+                left = Identifier { value = "x" };
+                right =
+                  Infix
+                    {
+                      token = Asterisk;
+                      left = Identifier { value = "y" };
+                      right = Identifier { value = "z" };
+                    };
               };
         };
     ]

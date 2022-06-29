@@ -128,11 +128,27 @@ let rec prefix_parse_fns p =
   | Token.Bang
   | Token.Minus ->
     parse_prefix_expression p
+  | Token.LParen -> parse_grouped_expression p
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
         p,
       None )
+
+and parse_grouped_expression p =
+  let p = next_token p in
+  match parse_expression lowest p with
+  | p, None -> (p, None)
+  | p, Some exp ->
+    let p, is_expected = expect_token Token.RParen p in
+    if is_expected then
+      (p, Some exp)
+    else
+      ( parse_error
+          ("parse error: right paren not found, cur_token: "
+          ^ Token.show p.cur_token)
+          p,
+        None )
 
 and infix_parse_fns p =
   match p.peek_token with

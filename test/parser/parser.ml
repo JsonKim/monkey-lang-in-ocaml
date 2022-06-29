@@ -129,6 +129,80 @@ let test_infix_expression () =
     ]
     (Lexer.make code |> To_test.ast)
 
+let test_grouped_expression () =
+  let code = "(x + y) * z;\n(1 + 2 * 3) * 4;\n-(a - b);\n-a - b" in
+  let open Ast in
+  let open Token in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      ExpressionStatement
+        {
+          expression =
+            Infix
+              {
+                token = Asterisk;
+                left =
+                  Infix
+                    {
+                      token = Plus;
+                      left = Identifier { value = "x" };
+                      right = Identifier { value = "y" };
+                    };
+                right = Identifier { value = "z" };
+              };
+        };
+      ExpressionStatement
+        {
+          expression =
+            Infix
+              {
+                token = Asterisk;
+                left =
+                  Infix
+                    {
+                      token = Plus;
+                      left = IntegerLiteral { value = 1 };
+                      right =
+                        Infix
+                          {
+                            token = Asterisk;
+                            left = IntegerLiteral { value = 2 };
+                            right = IntegerLiteral { value = 3 };
+                          };
+                    };
+                right = IntegerLiteral { value = 4 };
+              };
+        };
+      ExpressionStatement
+        {
+          expression =
+            Prefix
+              {
+                token = Minus;
+                right =
+                  Infix
+                    {
+                      token = Minus;
+                      left = Identifier { value = "a" };
+                      right = Identifier { value = "b" };
+                    };
+              };
+        };
+      ExpressionStatement
+        {
+          expression =
+            Infix
+              {
+                token = Minus;
+                left =
+                  Prefix { token = Minus; right = Identifier { value = "a" } };
+                right = Identifier { value = "b" };
+              };
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
   test_let_statements |> ignore;
@@ -147,5 +221,6 @@ let () =
             test_boolean_literal_expression;
           test_case "parse PrefixExpression" `Slow test_prefix_expression;
           test_case "parse InfixExpression" `Slow test_infix_expression;
+          test_case "parse grouped Expression" `Slow test_grouped_expression;
         ] );
     ]

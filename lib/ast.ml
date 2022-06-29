@@ -16,6 +16,7 @@ and expression =
   | Empty
   | Identifier     of { value : string }
   | IntegerLiteral of { value : int }
+  | Boolean        of { value : bool }
   | Prefix         of {
       token : Token.t;
       right : expression;

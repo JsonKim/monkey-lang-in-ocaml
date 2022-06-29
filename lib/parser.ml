@@ -108,10 +108,23 @@ let parse_int p =
         p,
       None )
 
+let parse_boolean p =
+  match p.cur_token with
+  | Token.True -> (p, Some (Ast.Boolean { value = true }))
+  | Token.False -> (p, Some (Ast.Boolean { value = false }))
+  | _ ->
+    ( parse_error
+        ("parse error: not boolean, cur_token: " ^ Token.show p.cur_token)
+        p,
+      None )
+
 let rec prefix_parse_fns p =
   match p.cur_token with
   | Token.Ident _ -> parse_identifier p
   | Token.Int _ -> parse_int p
+  | Token.True
+  | Token.False ->
+    parse_boolean p
   | Token.Bang
   | Token.Minus ->
     parse_prefix_expression p

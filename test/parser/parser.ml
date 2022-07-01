@@ -203,6 +203,91 @@ let test_grouped_expression () =
     ]
     (Lexer.make code |> To_test.ast)
 
+let test_if_expression () =
+  let code = "if (x < y) { 1+2; x }" in
+  let open Ast in
+  let open Token in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      ExpressionStatement
+        {
+          expression =
+            If
+              {
+                condition =
+                  Infix
+                    {
+                      token = LT;
+                      left = Identifier { value = "x" };
+                      right = Identifier { value = "y" };
+                    };
+                consequence =
+                  BlockStatement
+                    {
+                      statements =
+                        [
+                          ExpressionStatement
+                            {
+                              expression =
+                                Infix
+                                  {
+                                    token = Plus;
+                                    left = IntegerLiteral { value = 1 };
+                                    right = IntegerLiteral { value = 2 };
+                                  };
+                            };
+                          ExpressionStatement
+                            { expression = Identifier { value = "x" } };
+                        ];
+                    };
+                alternative = None;
+              };
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
+let test_if_else_expression () =
+  let code = "if (x < y) { x } else { y }" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      Ast.ExpressionStatement
+        {
+          expression =
+            Ast.If
+              {
+                condition =
+                  Ast.Infix
+                    {
+                      token = Token.LT;
+                      left = Ast.Identifier { value = "x" };
+                      right = Ast.Identifier { value = "y" };
+                    };
+                consequence =
+                  Ast.BlockStatement
+                    {
+                      statements =
+                        [
+                          Ast.ExpressionStatement
+                            { expression = Ast.Identifier { value = "x" } };
+                        ];
+                    };
+                alternative =
+                  Some
+                    (Ast.BlockStatement
+                       {
+                         statements =
+                           [
+                             Ast.ExpressionStatement
+                               { expression = Ast.Identifier { value = "y" } };
+                           ];
+                       });
+              };
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
   test_let_statements |> ignore;
@@ -222,5 +307,7 @@ let () =
           test_case "parse PrefixExpression" `Slow test_prefix_expression;
           test_case "parse InfixExpression" `Slow test_infix_expression;
           test_case "parse grouped Expression" `Slow test_grouped_expression;
+          test_case "parse if Expression" `Slow test_if_expression;
+          test_case "parse if-else Expression" `Slow test_if_else_expression;
         ] );
     ]

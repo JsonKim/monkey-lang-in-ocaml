@@ -10,6 +10,7 @@ and statement =
     }
   | ReturnStatement     of { value : expression }
   | ExpressionStatement of { expression : expression }
+  | BlockStatement      of { statements : statement list }
 [@@deriving show]
 
 and expression =
@@ -25,6 +26,11 @@ and expression =
       token : Token.t;
       left : expression;
       right : expression;
+    }
+  | If             of {
+      condition : expression;
+      consequence : statement;
+      alternative : statement option;
     }
 [@@deriving show]
 

@@ -129,6 +129,7 @@ let rec prefix_parse_fns p =
   | Token.Minus ->
     parse_prefix_expression p
   | Token.LParen -> parse_grouped_expression p
+  | Token.If -> parse_if_expression p
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
@@ -149,6 +150,47 @@ and parse_grouped_expression p =
           ^ Token.show p.cur_token)
           p,
         None )
+
+and parse_if_expression p =
+  let p, is_expected = expect_token Token.LParen p in
+  if is_expected then
+    match p |> next_token |> parse_expression lowest with
+    | p, Some condition ->
+      let p, is_expected = expect_token Token.RParen p in
+      if is_expected then
+        let p, is_expected = expect_token Token.LBrace p in
+        if is_expected then
+          match parse_block_statement p with
+          | p, None -> (p, None)
+          | p, Some consequence ->
+            let p, alternative =
+              if peek_token_is Token.Else p then
+                let p, is_expected =
+                  p |> next_token |> expect_token Token.LBrace in
+                if is_expected then parse_block_statement p else (p, None)
+              else
+                (p, None) in
+            (p, Some (Ast.If { condition; consequence; alternative }))
+        else
+          (p, None)
+      else
+        (p, None)
+    | p, None -> (p, None)
+  else
+    (p, None)
+
+and parse_block_statement p =
+  let rec go statements p =
+    if cur_token_is Token.RBrace p || cur_token_is Token.EOF p then
+      (p, statements)
+    else
+      match parse_statement p with
+      | p, None -> go statements (next_token p)
+      | p, Some stmt -> go (statements @ [stmt]) (next_token p) in
+
+  let p = next_token p in
+  let p, statements = go [] p in
+  (p, Some (Ast.BlockStatement { statements }))
 
 and infix_parse_fns p =
   match p.peek_token with
@@ -197,14 +239,14 @@ and parse_expression precedence p =
   | p, None -> (p, None)
   | p, Some left -> go p left
 
-let parse_expression_statement p =
+and parse_expression_statement p =
   match parse_expression lowest p with
   | p, Some expression ->
     let p = if peek_token_is Token.Semicolon p then next_token p else p in
     (p, Some (Ast.ExpressionStatement { expression }))
   | p, None -> (p, None)
 
-let parse_statement p =
+and parse_statement p =
   match p.cur_token with
   | Token.Let -> parse_let_statement p
   | Token.Return -> parse_return_statement p

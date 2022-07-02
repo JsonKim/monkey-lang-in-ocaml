@@ -5,34 +5,43 @@ type node =
 
 and statement =
   | LetStatement        of {
-      identifier : expression;
+      identifier : identifier;
       value : expression;
     }
   | ReturnStatement     of { value : expression }
   | ExpressionStatement of { expression : expression }
-  | BlockStatement      of { statements : statement list }
+[@@deriving show]
+
+and blockStatement = statement list [@@deriving show]
+and identifier = string
+
+and literal =
+  | Integer of int
+  | Boolean of bool
 [@@deriving show]
 
 and expression =
   | Empty
-  | Identifier     of { value : string }
-  | IntegerLiteral of { value : int }
-  | Boolean        of { value : bool }
-  | Prefix         of {
+  | Identifier of identifier
+  | Literal    of literal
+  | Prefix     of {
       token : Token.t;
       right : expression;
     }
-  | Infix          of {
+  | Infix      of {
       token : Token.t;
       left : expression;
       right : expression;
     }
-  | If             of {
+  | If         of {
       condition : expression;
-      consequence : statement;
-      alternative : statement option;
+      consequence : blockStatement;
+      alternative : blockStatement option;
     }
 [@@deriving show]
+
+let int_to_literal x = Literal (Integer x)
+let bool_to_literal x = Literal (Boolean x)
 
 type program = Program of statement list
 

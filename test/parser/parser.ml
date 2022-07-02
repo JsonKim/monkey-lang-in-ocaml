@@ -12,10 +12,9 @@ let test_let_statements () =
     "same ast"
     Ast.
       [
-        LetStatement { identifier = Identifier { value = "x" }; value = Empty };
-        LetStatement { identifier = Identifier { value = "y" }; value = Empty };
-        LetStatement
-          { identifier = Identifier { value = "foobar" }; value = Empty };
+        LetStatement { identifier = "x"; value = Empty };
+        LetStatement { identifier = "y"; value = Empty };
+        LetStatement { identifier = "foobar"; value = Empty };
       ]
     (Lexer.make code |> To_test.ast)
 
@@ -35,14 +34,14 @@ let test_identifier_expression () =
   let code = "foobar;" in
   Alcotest.(check (list ast_testable))
     "same ast"
-    Ast.[ExpressionStatement { expression = Identifier { value = "foobar" } }]
+    Ast.[ExpressionStatement { expression = Identifier "foobar" }]
     (Lexer.make code |> To_test.ast)
 
 let test_integer_literal_expression () =
   let code = "5;" in
   Alcotest.(check (list ast_testable))
     "same ast"
-    Ast.[ExpressionStatement { expression = IntegerLiteral { value = 5 } }]
+    Ast.[ExpressionStatement { expression = int_to_literal 5 }]
     (Lexer.make code |> To_test.ast)
 
 let test_boolean_literal_expression () =
@@ -51,8 +50,8 @@ let test_boolean_literal_expression () =
     "same ast"
     Ast.
       [
-        ExpressionStatement { expression = Boolean { value = true } };
-        ExpressionStatement { expression = Boolean { value = false } };
+        ExpressionStatement { expression = bool_to_literal true };
+        ExpressionStatement { expression = bool_to_literal false };
       ]
     (Lexer.make code |> To_test.ast)
 
@@ -64,15 +63,9 @@ let test_prefix_expression () =
     "same ast"
     [
       ExpressionStatement
-        {
-          expression =
-            Prefix { token = Bang; right = IntegerLiteral { value = 5 } };
-        };
+        { expression = Prefix { token = Bang; right = int_to_literal 5 } };
       ExpressionStatement
-        {
-          expression =
-            Prefix { token = Minus; right = IntegerLiteral { value = 15 } };
-        };
+        { expression = Prefix { token = Minus; right = int_to_literal 15 } };
     ]
     (Lexer.make code |> To_test.ast)
 
@@ -93,10 +86,10 @@ let test_infix_expression () =
                   Infix
                     {
                       token = Plus;
-                      left = IntegerLiteral { value = 1 };
-                      right = IntegerLiteral { value = 2 };
+                      left = int_to_literal 1;
+                      right = int_to_literal 2;
                     };
-                right = IntegerLiteral { value = 3 };
+                right = int_to_literal 3;
               };
         };
       ExpressionStatement
@@ -105,9 +98,8 @@ let test_infix_expression () =
             Infix
               {
                 token = Asterisk;
-                left =
-                  Prefix { token = Minus; right = Identifier { value = "a" } };
-                right = Identifier { value = "b" };
+                left = Prefix { token = Minus; right = Identifier "a" };
+                right = Identifier "b";
               };
         };
       ExpressionStatement
@@ -116,13 +108,13 @@ let test_infix_expression () =
             Infix
               {
                 token = Plus;
-                left = Identifier { value = "x" };
+                left = Identifier "x";
                 right =
                   Infix
                     {
                       token = Asterisk;
-                      left = Identifier { value = "y" };
-                      right = Identifier { value = "z" };
+                      left = Identifier "y";
+                      right = Identifier "z";
                     };
               };
         };
@@ -146,10 +138,10 @@ let test_grouped_expression () =
                   Infix
                     {
                       token = Plus;
-                      left = Identifier { value = "x" };
-                      right = Identifier { value = "y" };
+                      left = Identifier "x";
+                      right = Identifier "y";
                     };
-                right = Identifier { value = "z" };
+                right = Identifier "z";
               };
         };
       ExpressionStatement
@@ -162,16 +154,16 @@ let test_grouped_expression () =
                   Infix
                     {
                       token = Plus;
-                      left = IntegerLiteral { value = 1 };
+                      left = int_to_literal 1;
                       right =
                         Infix
                           {
                             token = Asterisk;
-                            left = IntegerLiteral { value = 2 };
-                            right = IntegerLiteral { value = 3 };
+                            left = int_to_literal 2;
+                            right = int_to_literal 3;
                           };
                     };
-                right = IntegerLiteral { value = 4 };
+                right = int_to_literal 4;
               };
         };
       ExpressionStatement
@@ -184,8 +176,8 @@ let test_grouped_expression () =
                   Infix
                     {
                       token = Minus;
-                      left = Identifier { value = "a" };
-                      right = Identifier { value = "b" };
+                      left = Identifier "a";
+                      right = Identifier "b";
                     };
               };
         };
@@ -195,9 +187,8 @@ let test_grouped_expression () =
             Infix
               {
                 token = Minus;
-                left =
-                  Prefix { token = Minus; right = Identifier { value = "a" } };
-                right = Identifier { value = "b" };
+                left = Prefix { token = Minus; right = Identifier "a" };
+                right = Identifier "b";
               };
         };
     ]
@@ -219,28 +210,23 @@ let test_if_expression () =
                   Infix
                     {
                       token = LT;
-                      left = Identifier { value = "x" };
-                      right = Identifier { value = "y" };
+                      left = Identifier "x";
+                      right = Identifier "y";
                     };
                 consequence =
-                  BlockStatement
-                    {
-                      statements =
-                        [
-                          ExpressionStatement
+                  [
+                    ExpressionStatement
+                      {
+                        expression =
+                          Infix
                             {
-                              expression =
-                                Infix
-                                  {
-                                    token = Plus;
-                                    left = IntegerLiteral { value = 1 };
-                                    right = IntegerLiteral { value = 2 };
-                                  };
+                              token = Plus;
+                              left = int_to_literal 1;
+                              right = int_to_literal 2;
                             };
-                          ExpressionStatement
-                            { expression = Identifier { value = "x" } };
-                        ];
-                    };
+                      };
+                    ExpressionStatement { expression = Identifier "x" };
+                  ];
                 alternative = None;
               };
         };
@@ -261,28 +247,16 @@ let test_if_else_expression () =
                   Ast.Infix
                     {
                       token = Token.LT;
-                      left = Ast.Identifier { value = "x" };
-                      right = Ast.Identifier { value = "y" };
+                      left = Ast.Identifier "x";
+                      right = Ast.Identifier "y";
                     };
                 consequence =
-                  Ast.BlockStatement
-                    {
-                      statements =
-                        [
-                          Ast.ExpressionStatement
-                            { expression = Ast.Identifier { value = "x" } };
-                        ];
-                    };
+                  [Ast.ExpressionStatement { expression = Ast.Identifier "x" }];
                 alternative =
                   Some
-                    (Ast.BlockStatement
-                       {
-                         statements =
-                           [
-                             Ast.ExpressionStatement
-                               { expression = Ast.Identifier { value = "y" } };
-                           ];
-                       });
+                    [
+                      Ast.ExpressionStatement { expression = Ast.Identifier "y" };
+                    ];
               };
         };
     ]

@@ -73,8 +73,7 @@ let expect_token t p =
 let parse_let_statement p =
   let p, is_expected_ident = expect_token (Token.Ident "") p in
   match (is_expected_ident, p.cur_token) with
-  | true, Token.Ident value ->
-    let identifier = Ast.Identifier { value } in
+  | true, Token.Ident identifier ->
     let p, is_expected_assign = expect_token Token.Assign p in
     if is_expected_assign then
       (p, Some (Ast.LetStatement { identifier; value = Ast.Empty }))
@@ -92,39 +91,22 @@ let parse_return_statement p =
 
 let parse_identifier p =
   match p.cur_token with
-  | Token.Ident value -> (p, Some (Ast.Identifier { value }))
+  | Token.Ident value -> (p, Some (Ast.Identifier value))
   | _ ->
     ( parse_error
         ("parse error: not identifier, cur_token: " ^ Token.show p.cur_token)
         p,
       None )
 
-let parse_int p =
-  match p.cur_token with
-  | Token.Int value -> (p, Some (Ast.IntegerLiteral { value }))
-  | _ ->
-    ( parse_error
-        ("parse error: not int, cur_token: " ^ Token.show p.cur_token)
-        p,
-      None )
-
-let parse_boolean p =
-  match p.cur_token with
-  | Token.True -> (p, Some (Ast.Boolean { value = true }))
-  | Token.False -> (p, Some (Ast.Boolean { value = false }))
-  | _ ->
-    ( parse_error
-        ("parse error: not boolean, cur_token: " ^ Token.show p.cur_token)
-        p,
-      None )
+let parse_int value p = (p, Some (value |> Ast.int_to_literal))
+let parse_boolean value p = (p, Some (value |> Ast.bool_to_literal))
 
 let rec prefix_parse_fns p =
   match p.cur_token with
   | Token.Ident _ -> parse_identifier p
-  | Token.Int _ -> parse_int p
-  | Token.True
-  | Token.False ->
-    parse_boolean p
+  | Token.Int value -> parse_int value p
+  | Token.True -> parse_boolean true p
+  | Token.False -> parse_boolean false p
   | Token.Bang
   | Token.Minus ->
     parse_prefix_expression p
@@ -190,7 +172,7 @@ and parse_block_statement p =
 
   let p = next_token p in
   let p, statements = go [] p in
-  (p, Some (Ast.BlockStatement { statements }))
+  (p, Some statements)
 
 and infix_parse_fns p =
   match p.peek_token with

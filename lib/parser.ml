@@ -112,6 +112,7 @@ let rec prefix_parse_fns p =
     parse_prefix_expression p
   | Token.LParen -> parse_grouped_expression p
   | Token.If -> parse_if_expression p
+  | Token.Function -> parse_function_literal p
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
@@ -155,6 +156,41 @@ and parse_if_expression p =
             (p, Some (Ast.If { condition; consequence; alternative }))
         else
           (p, None)
+      else
+        (p, None)
+    | p, None -> (p, None)
+  else
+    (p, None)
+
+and parse_function_parameters p =
+  let rec go parameters p =
+    match p.peek_token with
+    | Token.Comma -> (
+      let p = p |> next_token |> next_token in
+      match p.cur_token with
+      | Token.Ident value -> go (parameters @ [value]) p
+      | _ -> (p, None))
+    | Token.RParen -> (p |> next_token, Some parameters)
+    | _ -> (p, None) in
+
+  if peek_token_is Token.RParen p then
+    (p |> next_token, Some [])
+  else
+    let p = p |> next_token in
+    match p.cur_token with
+    | Token.Ident value -> go [value] p
+    | _ -> (p, None)
+
+and parse_function_literal p =
+  let p, is_expected = expect_token Token.LParen p in
+  if is_expected then
+    match parse_function_parameters p with
+    | p, Some parameters ->
+      let p, is_expected = expect_token Token.LBrace p in
+      if is_expected then
+        match parse_block_statement p with
+        | p, Some body -> (p, Some (Ast.Function { parameters; body }))
+        | p, None -> (p, None)
       else
         (p, None)
     | p, None -> (p, None)

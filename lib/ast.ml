@@ -38,6 +38,10 @@ and expression =
       consequence : blockStatement;
       alternative : blockStatement option;
     }
+  | Function   of {
+      parameters : identifier list;
+      body : blockStatement;
+    }
 [@@deriving show]
 
 let int_to_literal x = Literal (Integer x)

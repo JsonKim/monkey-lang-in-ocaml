@@ -262,6 +262,48 @@ let test_if_else_expression () =
     ]
     (Lexer.make code |> To_test.ast)
 
+let test_function_literal_expression () =
+  let code = "fn () { 42 }\nfn(x, y) { x + y }" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      Ast.ExpressionStatement
+        {
+          expression =
+            Ast.Function
+              {
+                parameters = [];
+                body =
+                  [
+                    Ast.ExpressionStatement
+                      { expression = Ast.Literal (Ast.Integer 42) };
+                  ];
+              };
+        };
+      Ast.ExpressionStatement
+        {
+          expression =
+            Ast.Function
+              {
+                parameters = ["x"; "y"];
+                body =
+                  [
+                    Ast.ExpressionStatement
+                      {
+                        expression =
+                          Ast.Infix
+                            {
+                              token = Token.Plus;
+                              left = Ast.Identifier "x";
+                              right = Ast.Identifier "y";
+                            };
+                      };
+                  ];
+              };
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
   test_let_statements |> ignore;
@@ -283,5 +325,7 @@ let () =
           test_case "parse grouped Expression" `Slow test_grouped_expression;
           test_case "parse if Expression" `Slow test_if_expression;
           test_case "parse if-else Expression" `Slow test_if_else_expression;
+          test_case "parse function literal Expression" `Slow
+            test_function_literal_expression;
         ] );
     ]

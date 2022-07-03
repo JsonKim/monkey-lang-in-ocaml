@@ -26,8 +26,7 @@ let print code =
     if List.length p.errors > 0 then
       p.errors |> parse_list "\t" |> print_error
     else
-      stmt |> List.map Ast.show_statement |> parse_list "" |> print_endline
-  in
+      stmt |> Evaluator.eval_program |> Object.show |> print_endline in
 
   let l = Lexer.make code in
   let p = Parser.make l in

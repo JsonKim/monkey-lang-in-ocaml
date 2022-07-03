@@ -1,7 +1,7 @@
 open Monkey
 
 module To_test = struct
-  let ast lex = Parser.parse_program (Parser.make lex)
+  let ast lex = lex |> Parser.make |> Parser.parse_program |> snd
 end
 
 let ast_testable = Alcotest.testable Ast.pp_statement Ast.equal_statement

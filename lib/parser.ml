@@ -301,12 +301,13 @@ and parse_statement p =
 
 let parse_program p =
   let rec go acc p' =
-    let next_p, stmt = parse_statement p' in
-    let acc' =
-      match stmt with
-      | Some stmt -> acc @ [stmt]
-      | None -> acc in
-    match next_p.cur_token with
-    | Token.EOF -> acc'
-    | _ -> go acc' (next_token next_p) in
+    match p'.cur_token with
+    | Token.EOF -> (p', acc)
+    | _ ->
+      let next_p, stmt = parse_statement p' in
+      let acc' =
+        match stmt with
+        | Some stmt -> acc @ [stmt]
+        | None -> acc in
+      go acc' (next_token next_p) in
   go [] p

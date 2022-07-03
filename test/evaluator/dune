@@ -1,0 +1,3 @@
+(test
+ (name evaluator)
+ (libraries monkey.lib fmt alcotest))

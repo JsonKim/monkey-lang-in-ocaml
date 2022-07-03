@@ -304,6 +304,48 @@ let test_function_literal_expression () =
     ]
     (Lexer.make code |> To_test.ast)
 
+let test_call_expression () =
+  let code = "f();\ng(y);\nadd(2, 3);\nh(1 + 2)" in
+  let open Ast in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      ExpressionStatement
+        { expression = Call { fn = Identifier "f"; arguments = [] } };
+      ExpressionStatement
+        {
+          expression =
+            Call { fn = Identifier "g"; arguments = [Identifier "y"] };
+        };
+      ExpressionStatement
+        {
+          expression =
+            Call
+              {
+                fn = Identifier "add";
+                arguments = [Literal (Integer 2); Literal (Integer 3)];
+              };
+        };
+      ExpressionStatement
+        {
+          expression =
+            Call
+              {
+                fn = Identifier "h";
+                arguments =
+                  [
+                    Infix
+                      {
+                        token = Token.Plus;
+                        left = Literal (Integer 1);
+                        right = Literal (Integer 2);
+                      };
+                  ];
+              };
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
   test_let_statements |> ignore;
@@ -327,5 +369,6 @@ let () =
           test_case "parse if-else Expression" `Slow test_if_else_expression;
           test_case "parse function literal Expression" `Slow
             test_function_literal_expression;
+          test_case "parse call Expression" `Slow test_call_expression;
         ] );
     ]

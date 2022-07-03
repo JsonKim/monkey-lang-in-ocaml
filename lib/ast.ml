@@ -42,6 +42,10 @@ and expression =
       parameters : identifier list;
       body : blockStatement;
     }
+  | Call       of {
+      fn : expression;
+      arguments : expression list;
+    }
 [@@deriving show]
 
 let int_to_literal x = Literal (Integer x)

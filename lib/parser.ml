@@ -5,7 +5,7 @@ type t = {
   errors : string list;
 }
 
-let prefixPrecedence = 7
+let prefixPrecedence = 6
 let lowest = 1
 
 let precedence tok =
@@ -22,8 +22,7 @@ let precedence tok =
   | Token.Slash
   | Token.Asterisk ->
     5
-  | Token.LParen -> 6
-  | Token.LBrace -> 8
+  | Token.LParen -> 7
   | _ -> lowest
 
 let next_token p =
@@ -221,6 +220,7 @@ and infix_parse_fns p =
   | Token.LT
   | Token.GT ->
     Some parse_infix_expression
+  | Token.LParen -> Some parse_call_expression
   | _ -> None
 
 and parse_prefix_expression p =
@@ -237,6 +237,30 @@ and parse_infix_expression left p =
   match parse_expression precedence p with
   | p, Some right -> (p, Some (Ast.Infix { token; left; right }))
   | p, None -> (p, None)
+
+and parse_call_expression fn p =
+  match parse_call_arguments p with
+  | p, Some arguments -> (p, Some (Ast.Call { fn; arguments }))
+  | p, None -> (p, None)
+
+and parse_call_arguments p =
+  let rec go arguments p =
+    match p.peek_token with
+    | Token.Comma ->
+      let p = p |> next_token |> next_token in
+      parse_argument arguments p
+    | Token.RParen -> (p |> next_token, Some arguments)
+    | _ -> (p, None)
+  and parse_argument arguments p =
+    match parse_expression lowest p with
+    | p, Some argument -> go (arguments @ [argument]) p
+    | p, None -> (p, None) in
+
+  if peek_token_is Token.RParen p then
+    (p |> next_token, Some [])
+  else
+    let p = p |> next_token in
+    parse_argument [] p
 
 and parse_expression precedence p =
   let rec go p left =

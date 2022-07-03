@@ -3,6 +3,11 @@ open Ast
 let trueObject = Object.Boolean true
 let falseObject = Object.Boolean false
 
+let is_truthy = function
+  | Object.Null -> false
+  | Object.Boolean b -> b
+  | _ -> true
+
 let rec eval node =
   match node with
   | ExpressionStatement { expression } -> eval_expression expression
@@ -15,6 +20,13 @@ and eval_expression = function
   | Prefix { token; right } -> eval_prefix token (eval_expression right)
   | Infix { token; left; right } ->
     eval_infix token (eval_expression left) (eval_expression right)
+  | If { condition; consequence; alternative } -> (
+    if condition |> eval_expression |> is_truthy then
+      eval_program consequence
+    else
+      match alternative with
+      | Some alternative -> eval_program alternative
+      | None -> Object.Null)
   | _ -> Object.Null
 
 and eval_prefix token right =
@@ -54,7 +66,7 @@ and eval_minus = function
   | Object.Integer n -> Object.Integer (-n)
   | _ -> Object.Null
 
-let eval_program program =
+and eval_program program =
   let rec go last_result = function
     | [] -> last_result
     | h :: t -> go (eval h) t in

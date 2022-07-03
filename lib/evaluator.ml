@@ -24,8 +24,12 @@ and eval_prefix token right =
   | _ -> Object.Null
 
 and eval_infix token left right =
-  match (left, right) with
-  | Integer l, Integer r -> eval_integer_infix token l r
+  match (token, left, right) with
+  | _, Integer l, Integer r -> eval_integer_infix token l r
+  | Token.Eq, _, _ ->
+    if Object.equal left right then trueObject else falseObject
+  | Token.Not_Eq, _, _ ->
+    if Object.equal left right == false then trueObject else falseObject
   | _ -> Object.Null
 
 and eval_integer_infix token left right =

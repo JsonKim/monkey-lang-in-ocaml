@@ -21,6 +21,9 @@ let test_eval () =
       "2 < 1";
       "1 == 1";
       "1 != 1";
+      "(1 + 1) == 2";
+      "(2 < 1) == false";
+      "(1 + 1) != 3";
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -37,6 +40,9 @@ let test_eval () =
         Boolean false;
         Boolean true;
         Boolean false;
+        Boolean true;
+        Boolean true;
+        Boolean true;
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

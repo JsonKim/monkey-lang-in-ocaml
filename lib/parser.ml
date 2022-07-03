@@ -69,25 +69,6 @@ let parse_error msg p = { p with errors = p.errors @ [msg] }
 let expect_token t p =
   if peek_token_is t p then (next_token p, true) else (peek_error t p, false)
 
-let parse_let_statement p =
-  let p, is_expected_ident = expect_token (Token.Ident "") p in
-  match (is_expected_ident, p.cur_token) with
-  | true, Token.Ident identifier ->
-    let p, is_expected_assign = expect_token Token.Assign p in
-    if is_expected_assign then
-      (p, Some (Ast.LetStatement { identifier; value = Ast.Empty }))
-    else
-      (p, None)
-  | _ -> (p, None)
-
-let parse_return_statement p =
-  let rec go p' =
-    if p' |> cur_token_is Token.Semicolon then
-      p'
-    else
-      p' |> next_token |> go in
-  (p |> next_token |> go, Some (Ast.ReturnStatement { value = Ast.Empty }))
-
 let parse_identifier p =
   match p.cur_token with
   | Token.Ident value -> (p, Some (Ast.Identifier value))
@@ -100,7 +81,31 @@ let parse_identifier p =
 let parse_int value p = (p, Some (value |> Ast.int_to_literal))
 let parse_boolean value p = (p, Some (value |> Ast.bool_to_literal))
 
-let rec prefix_parse_fns p =
+let rec parse_let_statement p =
+  let p, is_expected_ident = expect_token (Token.Ident "") p in
+  match (is_expected_ident, p.cur_token) with
+  | true, Token.Ident identifier ->
+    let p, is_expected_assign = expect_token Token.Assign p in
+    if is_expected_assign then
+      let p = next_token p in
+      match parse_expression lowest p with
+      | p, Some value ->
+        let p = if peek_token_is Token.Semicolon p then p |> next_token else p in
+        (p, Some (Ast.LetStatement { identifier; value }))
+      | p, None -> (p, None)
+    else
+      (p, None)
+  | _ -> (p, None)
+
+and parse_return_statement p =
+  let p = p |> next_token in
+  match parse_expression lowest p with
+  | p, Some value ->
+    let p = if peek_token_is Token.Semicolon p then p |> next_token else p in
+    (p, Some (Ast.ReturnStatement { value }))
+  | p, None -> (p, None)
+
+and prefix_parse_fns p =
   match p.cur_token with
   | Token.Ident _ -> parse_identifier p
   | Token.Int value -> parse_int value p

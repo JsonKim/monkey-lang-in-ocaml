@@ -7,26 +7,92 @@ end
 let ast_testable = Alcotest.testable Ast.pp_statement Ast.equal_statement
 
 let test_let_statements () =
-  let code = "\nlet x = 5;\nlet y = 10;\nlet foobar = 8383838;\n" in
+  let code =
+    "\n\
+     let x = 5;\n\
+     let y = 10;\n\
+     let foobar = x + y;\n\
+     let f = fn(a, b) { a < b; }" in
   Alcotest.(check (list ast_testable))
     "same ast"
     Ast.
       [
-        LetStatement { identifier = "x"; value = Empty };
-        LetStatement { identifier = "y"; value = Empty };
-        LetStatement { identifier = "foobar"; value = Empty };
+        LetStatement { identifier = "x"; value = Literal (Integer 5) };
+        LetStatement { identifier = "y"; value = Literal (Integer 10) };
+        LetStatement
+          {
+            identifier = "foobar";
+            value =
+              Infix
+                {
+                  token = Token.Plus;
+                  left = Identifier "x";
+                  right = Identifier "y";
+                };
+          };
+        LetStatement
+          {
+            identifier = "f";
+            value =
+              Function
+                {
+                  parameters = ["a"; "b"];
+                  body =
+                    [
+                      ExpressionStatement
+                        {
+                          expression =
+                            Infix
+                              {
+                                token = Token.LT;
+                                left = Identifier "a";
+                                right = Identifier "b";
+                              };
+                        };
+                    ];
+                };
+          };
       ]
     (Lexer.make code |> To_test.ast)
 
 let test_return_statements () =
-  let code = "\nreturn 5;\nreturn 10;\nreturn 9933222;\n" in
+  let code = "return 5;\nreturn x + y;\nreturn fn(x, y) { return x + y; }" in
   Alcotest.(check (list ast_testable))
     "same ast"
     Ast.
       [
-        ReturnStatement { value = Empty };
-        ReturnStatement { value = Empty };
-        ReturnStatement { value = Empty };
+        ReturnStatement { value = Literal (Integer 5) };
+        ReturnStatement
+          {
+            value =
+              Infix
+                {
+                  token = Token.Plus;
+                  left = Identifier "x";
+                  right = Identifier "y";
+                };
+          };
+        ReturnStatement
+          {
+            value =
+              Function
+                {
+                  parameters = ["x"; "y"];
+                  body =
+                    [
+                      ReturnStatement
+                        {
+                          value =
+                            Infix
+                              {
+                                token = Token.Plus;
+                                left = Identifier "x";
+                                right = Identifier "y";
+                              };
+                        };
+                    ];
+                };
+          };
       ]
     (Lexer.make code |> To_test.ast)
 
@@ -348,14 +414,12 @@ let test_call_expression () =
 
 let () =
   let open Alcotest in
-  test_let_statements |> ignore;
-  test_return_statements |> ignore;
   run "Parser"
     [
       ( "parser test",
         [
-          (* test_case "parse LetStatement" `Slow test_let_statements;
-             test_case "parse ReturnStatement" `Slow test_return_statements; *)
+          test_case "parse LetStatement" `Slow test_let_statements;
+          test_case "parse ReturnStatement" `Slow test_return_statements;
           test_case "parse IdentifireExpression" `Slow
             test_identifier_expression;
           test_case "parse IntegerLiteralExpression" `Slow

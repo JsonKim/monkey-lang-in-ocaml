@@ -34,6 +34,10 @@ and eval_integer_infix token left right =
   | Token.Minus -> Object.Integer (left - right)
   | Token.Asterisk -> Object.Integer (left * right)
   | Token.Slash -> Object.Integer (left / right)
+  | Token.LT -> if left < right then trueObject else falseObject
+  | Token.GT -> if left > right then trueObject else falseObject
+  | Token.Eq -> if left == right then trueObject else falseObject
+  | Token.Not_Eq -> if left != right then trueObject else falseObject
   | _ -> Object.Null
 
 and eval_bang = function

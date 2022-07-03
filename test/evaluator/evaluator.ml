@@ -8,7 +8,20 @@ end
 let evaluator_testable = Alcotest.testable Object.pp Object.equal
 
 let test_eval () =
-  let code = ["10"; "-10"; "!true"; "!!false"; "!5"; "-5 + 5"; "2 * (1 + 2)"] in
+  let code =
+    [
+      "10";
+      "-10";
+      "!true";
+      "!!false";
+      "!5";
+      "-5 + 5";
+      "2 * (1 + 2)";
+      "1 < 2";
+      "2 < 1";
+      "1 == 1";
+      "1 != 1";
+    ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
     Object.
@@ -20,6 +33,10 @@ let test_eval () =
         Boolean false;
         Integer 0;
         Integer 6;
+        Boolean true;
+        Boolean false;
+        Boolean true;
+        Boolean false;
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

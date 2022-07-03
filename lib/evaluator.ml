@@ -13,12 +13,27 @@ and eval_expression = function
   | Literal (Boolean true) -> trueObject
   | Literal (Boolean false) -> falseObject
   | Prefix { token; right } -> eval_prefix token (eval_expression right)
+  | Infix { token; left; right } ->
+    eval_infix token (eval_expression left) (eval_expression right)
   | _ -> Object.Null
 
 and eval_prefix token right =
   match token with
   | Token.Bang -> eval_bang right
   | Token.Minus -> eval_minus right
+  | _ -> Object.Null
+
+and eval_infix token left right =
+  match (left, right) with
+  | Integer l, Integer r -> eval_integer_infix token l r
+  | _ -> Object.Null
+
+and eval_integer_infix token left right =
+  match token with
+  | Token.Plus -> Object.Integer (left + right)
+  | Token.Minus -> Object.Integer (left - right)
+  | Token.Asterisk -> Object.Integer (left * right)
+  | Token.Slash -> Object.Integer (left / right)
   | _ -> Object.Null
 
 and eval_bang = function

@@ -2,7 +2,7 @@ open Monkey
 
 module To_test = struct
   let eval lex =
-    lex |> Parser.make |> Parser.parse_program |> snd |> Evaluator.eval_program
+    lex |> Parser.make |> Parser.parse_program |> snd |> Evaluator.eval
 end
 
 let evaluator_testable = Alcotest.testable Object.pp Object.equal
@@ -27,6 +27,16 @@ let test_eval () =
       "if (true) { 10 }";
       "if (false) { 10 }";
       "if (1 == 2) { 10 } else { 20 }";
+      "true; return 2 * 3; 10 + 20";
+      {|
+      if (10 > 1) {
+        if (10 > 1) {
+          return 10;
+        }
+
+        return 1;
+      }
+      |};
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -49,6 +59,8 @@ let test_eval () =
         Integer 10;
         Null;
         Integer 20;
+        Integer 6;
+        Integer 10;
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

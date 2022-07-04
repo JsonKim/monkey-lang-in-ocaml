@@ -1,6 +1,8 @@
 type node =
-  | Statement  of statement
-  | Expression of expression
+  | Statement      of statement
+  | Expression     of expression
+  | Program        of statement list
+  | BlockStatement of blockStatement
 [@@deriving show, eq]
 
 and statement =
@@ -50,8 +52,3 @@ and expression =
 
 let int_to_literal x = Literal (Integer x)
 let bool_to_literal x = Literal (Boolean x)
-
-type program = Program of statement list
-
-let show_program p =
-  if List.length p > 0 then show_statement (List.hd p) else ""

@@ -1,7 +1,12 @@
 open Monkey
 
+exception Not_Program
+
 module To_test = struct
-  let ast lex = lex |> Parser.make |> Parser.parse_program |> snd
+  let ast lex =
+    match lex |> Parser.make |> Parser.parse_program |> snd with
+    | Ast.Program program -> program
+    | _ -> raise Not_Program
 end
 
 let ast_testable = Alcotest.testable Ast.pp_statement Ast.equal_statement

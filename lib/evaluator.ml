@@ -8,9 +8,10 @@ let is_truthy = function
   | Object.Boolean b -> b
   | _ -> true
 
-let rec eval node =
+let rec eval_statement node =
   match node with
   | ExpressionStatement { expression } -> eval_expression expression
+  | ReturnStatement { value } -> Object.Return (eval_expression value)
   | _ -> Object.Null
 
 and eval_expression = function
@@ -22,10 +23,10 @@ and eval_expression = function
     eval_infix token (eval_expression left) (eval_expression right)
   | If { condition; consequence; alternative } -> (
     if condition |> eval_expression |> is_truthy then
-      eval_program consequence
+      eval_block_statement consequence
     else
       match alternative with
-      | Some alternative -> eval_program alternative
+      | Some alternative -> eval_block_statement alternative
       | None -> Object.Null)
   | _ -> Object.Null
 
@@ -66,8 +67,27 @@ and eval_minus = function
   | Object.Integer n -> Object.Integer (-n)
   | _ -> Object.Null
 
+and eval node =
+  match node with
+  | Ast.Program program -> eval_program program
+  | Ast.BlockStatement block_statement -> eval_block_statement block_statement
+  | Ast.Statement statement -> eval_statement statement
+  | Ast.Expression expression -> eval_expression expression
+
 and eval_program program =
   let rec go last_result = function
     | [] -> last_result
-    | h :: t -> go (eval h) t in
+    | h :: t ->
+    match eval_statement h with
+    | Object.Return value -> value
+    | result -> go result t in
   go Object.Null program
+
+and eval_block_statement block_statement =
+  let rec go last_result = function
+    | [] -> last_result
+    | h :: t ->
+    match eval_statement h with
+    | Object.Return value -> Object.Return value
+    | result -> go result t in
+  go Object.Null block_statement

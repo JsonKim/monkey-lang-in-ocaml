@@ -302,7 +302,7 @@ and parse_statement p =
 let parse_program p =
   let rec go acc p' =
     match p'.cur_token with
-    | Token.EOF -> (p', acc)
+    | Token.EOF -> (p', Ast.Program acc)
     | _ ->
       let next_p, stmt = parse_statement p' in
       let acc' =

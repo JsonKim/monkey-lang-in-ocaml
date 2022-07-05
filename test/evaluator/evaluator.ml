@@ -1,8 +1,20 @@
 open Monkey
 
+exception Not_Program
+
 module To_test = struct
   let eval lex =
     lex |> Parser.make |> Parser.parse_program |> snd |> Evaluator.eval
+
+  let eval_for_error lex =
+    lex
+    |> Parser.make
+    |> Parser.parse_program
+    |> snd
+    |> (function
+         | Ast.Program p -> p
+         | _ -> raise Not_Program)
+    |> Evaluator.eval_block_statement
 end
 
 let evaluator_testable = Alcotest.testable Object.pp Object.equal
@@ -64,6 +76,49 @@ let test_eval () =
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 
+let test_error () =
+  let code =
+    [
+      "5 + true";
+      "5 + true; 5";
+      "-true";
+      "true + false";
+      "5; true + false; 5";
+      "if (10 > 1) { true + false; }";
+      "(-true) + 3";
+      "3 - (-false)";
+      "-(-false)";
+      "if (10 > true) { 1 + 2; }";
+      "return -(-true)";
+    ] in
+  Alcotest.(check (list evaluator_testable))
+    "same object"
+    Object.
+      [
+        Error "type mismatch: Integer Token.Plus Boolean";
+        Error "type mismatch: Integer Token.Plus Boolean";
+        Error "unknown operator: -(Object.Boolean true)";
+        Error
+          "unknown operator: (Object.Boolean true) Token.Plus (Object.Boolean \
+           false)";
+        Error
+          "unknown operator: (Object.Boolean true) Token.Plus (Object.Boolean \
+           false)";
+        Error
+          "unknown operator: (Object.Boolean true) Token.Plus (Object.Boolean \
+           false)";
+        Error "unknown operator: -(Object.Boolean true)";
+        Error "unknown operator: -(Object.Boolean false)";
+        Error "unknown operator: -(Object.Boolean false)";
+        Error "type mismatch: Integer Token.GT Boolean";
+        Error "unknown operator: -(Object.Boolean true)";
+      ]
+    (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
+
 let () =
   let open Alcotest in
-  run "Parser" [("evaluator test", [test_case "eval" `Slow test_eval])]
+  run "Parser"
+    [
+      ("evaluator test", [test_case "eval" `Slow test_eval]);
+      ("error test", [test_case "error" `Slow test_error]);
+    ]

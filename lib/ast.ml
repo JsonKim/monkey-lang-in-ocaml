@@ -23,7 +23,6 @@ and literal =
 [@@deriving show]
 
 and expression =
-  | Empty
   | Identifier of identifier
   | Literal    of literal
   | Prefix     of {

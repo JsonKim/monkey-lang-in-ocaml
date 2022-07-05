@@ -11,30 +11,45 @@ let is_truthy = function
 let rec eval_statement node =
   match node with
   | ExpressionStatement { expression } -> eval_expression expression
-  | ReturnStatement { value } -> Object.Return (eval_expression value)
+  | ReturnStatement { value } -> (
+    match eval_expression value with
+    | Object.Error message -> Object.Error message
+    | value -> Object.Return value)
   | _ -> Object.Null
 
 and eval_expression = function
   | Literal (Integer n) -> Object.Integer n
   | Literal (Boolean true) -> trueObject
   | Literal (Boolean false) -> falseObject
-  | Prefix { token; right } -> eval_prefix token (eval_expression right)
-  | Infix { token; left; right } ->
-    eval_infix token (eval_expression left) (eval_expression right)
+  | Prefix { token; right } -> (
+    match eval_expression right with
+    | Object.Error message -> Object.Error message
+    | right -> eval_prefix token right)
+  | Infix { token; left; right } -> (
+    match eval_expression left with
+    | Object.Error message -> Object.Error message
+    | left ->
+    match eval_expression right with
+    | Object.Error message -> Object.Error message
+    | right -> eval_infix token left right)
   | If { condition; consequence; alternative } -> (
-    if condition |> eval_expression |> is_truthy then
-      eval_block_statement consequence
-    else
-      match alternative with
-      | Some alternative -> eval_block_statement alternative
-      | None -> Object.Null)
+    match condition |> eval_expression with
+    | Object.Error message -> Object.Error message
+    | condition -> (
+      if condition |> is_truthy then
+        eval_block_statement consequence
+      else
+        match alternative with
+        | Some alternative -> eval_block_statement alternative
+        | None -> Object.Null))
   | _ -> Object.Null
 
 and eval_prefix token right =
   match token with
   | Token.Bang -> eval_bang right
   | Token.Minus -> eval_minus right
-  | _ -> Object.Null
+  | _ ->
+    Object.Error ("unknown operator: " ^ Token.show token ^ Object.show right)
 
 and eval_infix token left right =
   match (token, left, right) with
@@ -43,7 +58,23 @@ and eval_infix token left right =
     if Object.equal left right then trueObject else falseObject
   | Token.Not_Eq, _, _ ->
     if Object.equal left right == false then trueObject else falseObject
-  | _ -> Object.Null
+  | _, left, right when Object.decode_tag_of left != Object.decode_tag_of right
+    ->
+    Object.Error
+      ("type mismatch: "
+      ^ Object.decode_tag_of left
+      ^ " "
+      ^ Token.show token
+      ^ " "
+      ^ Object.decode_tag_of right)
+  | _ ->
+    Object.Error
+      ("unknown operator: "
+      ^ Object.show left
+      ^ " "
+      ^ Token.show token
+      ^ " "
+      ^ Object.show right)
 
 and eval_integer_infix token left right =
   match token with
@@ -55,7 +86,14 @@ and eval_integer_infix token left right =
   | Token.GT -> if left > right then trueObject else falseObject
   | Token.Eq -> if left == right then trueObject else falseObject
   | Token.Not_Eq -> if left != right then trueObject else falseObject
-  | _ -> Object.Null
+  | _ ->
+    Object.Error
+      ("unknown operator: "
+      ^ string_of_int left
+      ^ " "
+      ^ Token.show token
+      ^ " "
+      ^ string_of_int right)
 
 and eval_bang = function
   | Object.Boolean true -> falseObject
@@ -63,9 +101,10 @@ and eval_bang = function
   | Object.Null -> trueObject
   | _ -> falseObject
 
-and eval_minus = function
+and eval_minus right =
+  match right with
   | Object.Integer n -> Object.Integer (-n)
-  | _ -> Object.Null
+  | _ -> Object.Error ("unknown operator: -" ^ Object.show right)
 
 and eval node =
   match node with
@@ -80,6 +119,7 @@ and eval_program program =
     | h :: t ->
     match eval_statement h with
     | Object.Return value -> value
+    | Object.Error message -> Object.Error message
     | result -> go result t in
   go Object.Null program
 
@@ -89,5 +129,6 @@ and eval_block_statement block_statement =
     | h :: t ->
     match eval_statement h with
     | Object.Return value -> Object.Return value
+    | Object.Error message -> Object.Error message
     | result -> go result t in
   go Object.Null block_statement

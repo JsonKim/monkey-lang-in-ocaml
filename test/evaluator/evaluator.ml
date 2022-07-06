@@ -4,7 +4,12 @@ exception Not_Program
 
 module To_test = struct
   let eval lex =
-    lex |> Parser.make |> Parser.parse_program |> snd |> Evaluator.eval
+    lex
+    |> Parser.make
+    |> Parser.parse_program
+    |> snd
+    |> Evaluator.eval (Environment.make ())
+    |> fst
 
   let eval_for_error lex =
     lex
@@ -14,7 +19,8 @@ module To_test = struct
     |> (function
          | Ast.Program p -> p
          | _ -> raise Not_Program)
-    |> Evaluator.eval_block_statement
+    |> Evaluator.eval_block_statement (Environment.make ())
+    |> fst
 end
 
 let evaluator_testable = Alcotest.testable Object.pp Object.equal
@@ -49,6 +55,9 @@ let test_eval () =
         return 1;
       }
       |};
+      "let x = 5; x;";
+      "let x = 5 * 5; x;";
+      "let x = 5; let y = x; y";
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -73,6 +82,9 @@ let test_eval () =
         Integer 20;
         Integer 6;
         Integer 10;
+        Integer 5;
+        Integer 25;
+        Integer 5;
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

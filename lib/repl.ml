@@ -21,19 +21,28 @@ let print_error errors =
   print_endline "Woops! We ran into some monkey business here!";
   print_endline errors
 
-let print code =
-  let go (p : Parser.t) stmt =
-    if List.length p.errors > 0 then
-      p.errors |> parse_list "\t" |> print_error
+let print env code =
+  let go (p : Parser.t) env stmt =
+    if List.length p.errors > 0 then (
+      p.errors |> parse_list "\t" |> print_error;
+      env)
     else
-      stmt |> Evaluator.eval |> Object.show |> print_endline in
+      let obj, env = stmt |> Evaluator.eval env in
+      obj |> Object.show |> print_endline;
+      env in
 
   let l = Lexer.make code in
   let p = Parser.make l in
   let p, stmt = Parser.parse_program p in
-  go p stmt
+  go p env stmt
 
 let run () =
-  print_string prompt;
-  let line = read_line () in
-  print line
+  let rec go env =
+    try
+      print_string prompt;
+      let line = read_line () in
+      let env = print env line in
+      go env
+    with
+    | End_of_file -> () in
+  go (Environment.make ())

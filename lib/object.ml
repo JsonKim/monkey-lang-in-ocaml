@@ -12,3 +12,5 @@ let decode_tag_of = function
   | Null -> "Null"
   | Return _ -> "Return"
   | Error _ -> "Error"
+
+let compare x y = compare (show x) (show y)

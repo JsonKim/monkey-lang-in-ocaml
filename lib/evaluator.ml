@@ -8,41 +8,48 @@ let is_truthy = function
   | Object.Boolean b -> b
   | _ -> true
 
-let rec eval_statement node =
+let rec eval_statement env node =
   match node with
-  | ExpressionStatement { expression } -> eval_expression expression
+  | ExpressionStatement { expression } -> eval_expression env expression
   | ReturnStatement { value } -> (
-    match eval_expression value with
-    | Object.Error message -> Object.Error message
-    | value -> Object.Return value)
-  | _ -> Object.Null
+    match eval_expression env value with
+    | Object.Error message, env -> (Object.Error message, env)
+    | value, env -> (Object.Return value, env))
+  | LetStatement { identifier; value } ->
+  match eval_expression env value with
+  | Object.Error message, env -> (Object.Error message, env)
+  | value, env -> (Object.Null, Environment.set identifier value env)
 
-and eval_expression = function
-  | Literal (Integer n) -> Object.Integer n
-  | Literal (Boolean true) -> trueObject
-  | Literal (Boolean false) -> falseObject
+and eval_expression env = function
+  | Literal (Integer n) -> (Object.Integer n, env)
+  | Literal (Boolean true) -> (trueObject, env)
+  | Literal (Boolean false) -> (falseObject, env)
   | Prefix { token; right } -> (
-    match eval_expression right with
-    | Object.Error message -> Object.Error message
-    | right -> eval_prefix token right)
+    match eval_expression env right with
+    | Object.Error message, env -> (Object.Error message, env)
+    | right, env -> (eval_prefix token right, env))
   | Infix { token; left; right } -> (
-    match eval_expression left with
-    | Object.Error message -> Object.Error message
-    | left ->
-    match eval_expression right with
-    | Object.Error message -> Object.Error message
-    | right -> eval_infix token left right)
+    match eval_expression env left with
+    | Object.Error message, env -> (Object.Error message, env)
+    | left, env ->
+    match eval_expression env right with
+    | Object.Error message, env -> (Object.Error message, env)
+    | right, env -> (eval_infix token left right, env))
   | If { condition; consequence; alternative } -> (
-    match condition |> eval_expression with
-    | Object.Error message -> Object.Error message
-    | condition -> (
+    match condition |> eval_expression env with
+    | Object.Error message, env -> (Object.Error message, env)
+    | condition, env -> (
       if condition |> is_truthy then
-        eval_block_statement consequence
+        eval_block_statement env consequence
       else
         match alternative with
-        | Some alternative -> eval_block_statement alternative
-        | None -> Object.Null))
-  | _ -> Object.Null
+        | Some alternative -> eval_block_statement env alternative
+        | None -> (Object.Null, env)))
+  | Identifier ident -> (
+    match Environment.get ident env with
+    | Some obj -> (obj, env)
+    | None -> (Object.Error ("identifier not found: " ^ ident), env))
+  | _ -> (Object.Null, env)
 
 and eval_prefix token right =
   match token with
@@ -106,29 +113,30 @@ and eval_minus right =
   | Object.Integer n -> Object.Integer (-n)
   | _ -> Object.Error ("unknown operator: -" ^ Object.show right)
 
-and eval node =
+and eval env node =
   match node with
-  | Ast.Program program -> eval_program program
-  | Ast.BlockStatement block_statement -> eval_block_statement block_statement
-  | Ast.Statement statement -> eval_statement statement
-  | Ast.Expression expression -> eval_expression expression
+  | Ast.Program program -> eval_program env program
+  | Ast.BlockStatement block_statement ->
+    eval_block_statement env block_statement
+  | Ast.Statement statement -> eval_statement env statement
+  | Ast.Expression expression -> eval_expression env expression
 
-and eval_program program =
-  let rec go last_result = function
-    | [] -> last_result
+and eval_program env program =
+  let rec go (last_result, env) = function
+    | [] -> (last_result, env)
     | h :: t ->
-    match eval_statement h with
-    | Object.Return value -> value
-    | Object.Error message -> Object.Error message
-    | result -> go result t in
-  go Object.Null program
+    match eval_statement env h with
+    | Object.Return value, env -> (value, env)
+    | Object.Error message, env -> (Object.Error message, env)
+    | result, env -> go (result, env) t in
+  go (Object.Null, env) program
 
-and eval_block_statement block_statement =
-  let rec go last_result = function
-    | [] -> last_result
+and eval_block_statement env block_statement =
+  let rec go (last_result, env) = function
+    | [] -> (last_result, env)
     | h :: t ->
-    match eval_statement h with
-    | Object.Return value -> Object.Return value
-    | Object.Error message -> Object.Error message
-    | result -> go result t in
-  go Object.Null block_statement
+    match eval_statement env h with
+    | Object.Return value, env -> (Object.Return value, env)
+    | Object.Error message, env -> (Object.Error message, env)
+    | result, env -> go (result, env) t in
+  go (Object.Null, env) block_statement

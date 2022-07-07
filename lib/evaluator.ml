@@ -49,7 +49,45 @@ and eval_expression env = function
     match Environment.get ident env with
     | Some obj -> (obj, env)
     | None -> (Object.Error ("identifier not found: " ^ ident), env))
-  | _ -> (Object.Null, env)
+  | Function { parameters; body } ->
+    (Object.Function { parameters; body; env }, env)
+  | Call { fn; arguments } ->
+  match eval_expression env fn with
+  | Object.Error message, env -> (Object.Error message, env)
+  | fn, env ->
+  match eval_expressions env arguments with
+  | [], env -> (Object.Error "arguments is empty", env)
+  | [Object.Error message], env -> (Object.Error message, env)
+  | args, env -> (apply_function fn args, env)
+
+and eval_expressions env args =
+  let rec go env acc = function
+    | [] -> (acc, env)
+    | arg :: rest ->
+    match eval_expression env arg with
+    | Object.Error message, env -> ([Object.Error message], env)
+    | obj, env -> go env (acc @ [obj]) rest in
+  go env [] args
+
+and apply_function fn args =
+  match fn with
+  | Object.Function { parameters; body; env } -> (
+    let env = extend_function_env (parameters, args) env in
+    match eval_block_statement env body |> fst with
+    | Object.Return value -> value
+    | obj -> obj)
+  | _ -> Object.Error ("not a function: " ^ Object.show fn)
+
+and extend_function_env (parameters, args) env =
+  let rec go env = function
+    | [] -> env
+    | (parameter, arg) :: rest ->
+      let env = Environment.set parameter arg env in
+      go env rest in
+
+  let env = Environment.make_enclosed env in
+  let p = List.combine parameters args in
+  go env p
 
 and eval_prefix token right =
   match token with

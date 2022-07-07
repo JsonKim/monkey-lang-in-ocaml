@@ -127,10 +127,71 @@ let test_error () =
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
 
+let test_function_object () =
+  let code = ["fn(x) { x + 2; }"] in
+  Alcotest.(check (list evaluator_testable))
+    "same object"
+    [
+      Object.Function
+        {
+          parameters = ["x"];
+          body =
+            [
+              Ast.ExpressionStatement
+                {
+                  expression =
+                    Ast.Infix
+                      {
+                        token = Token.Plus;
+                        left = Ast.Identifier "x";
+                        right = Ast.Literal (Ast.Integer 2);
+                      };
+                };
+            ];
+          env = { Environment.env = []; outer = None };
+        };
+    ]
+    (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
+
+let test_function_application () =
+  let code =
+    [
+      "let identity = fn(x) { x; }; identity(5);";
+      "let identity = fn(x) { return x; }; identity(5);";
+      "let double = fn(x) { x * 2 }; double(5)";
+      "let add = fn(x, y) { x + y; }; add(3, 7)";
+      "let add = fn(x, y) { x + y; }; add(add(2, 3), add(4,5));";
+    ] in
+  Alcotest.(check (list evaluator_testable))
+    "same object"
+    [
+      Object.Integer 5;
+      Object.Integer 5;
+      Object.Integer 10;
+      Object.Integer 10;
+      Object.Integer 14;
+    ]
+    (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
+
+let test_closures () =
+  let code =
+    [
+      "let newAdder = fn(x) { fn(y) { x + y; } }; let addTwo = newAdder(2); \
+       addTwo(3);";
+    ] in
+  Alcotest.(check (list evaluator_testable))
+    "same object" [Object.Integer 5]
+    (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
+
 let () =
   let open Alcotest in
   run "Parser"
     [
       ("evaluator test", [test_case "eval" `Slow test_eval]);
+      ( "function object test",
+        [test_case "function object" `Slow test_function_object] );
+      ( "function application test",
+        [test_case "function application" `Slow test_function_application] );
+      ("closure test", [test_case "closure" `Slow test_closures]);
       ("error test", [test_case "error" `Slow test_error]);
     ]

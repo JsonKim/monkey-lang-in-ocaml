@@ -49,7 +49,11 @@ and eval_expression env = function
   | Identifier ident -> (
     match Environment.get ident env with
     | Some obj -> (obj, env)
-    | None -> (Object.Error ("identifier not found: " ^ ident), env))
+    | None -> (
+      let open Builtins in
+      match Builtin.find_opt ident fns with
+      | Some (Object.Builtin { fn }) -> (Object.Builtin { fn }, env)
+      | _ -> (Object.Error ("identifier not found: " ^ ident), env)))
   | Function { parameters; body } ->
     (Object.Function { parameters; body; env }, env)
   | Call { fn; arguments } ->
@@ -77,6 +81,7 @@ and apply_function fn args =
     match eval_block_statement env body |> fst with
     | Object.Return value -> value
     | obj -> obj)
+  | Object.Builtin { fn } -> fn args
   | _ -> Object.Error ("not a function: " ^ Object.show fn)
 
 and extend_function_env (parameters, args) env =

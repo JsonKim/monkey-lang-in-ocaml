@@ -9,6 +9,7 @@ type t =
       body : Ast.blockStatement;
       env : t Environment.t;
     }
+  | Builtin  of { fn : t list -> t [@equal fun _ _ -> false] }
   | Error    of string
 [@@deriving show, eq]
 
@@ -19,6 +20,7 @@ let decode_tag_of = function
   | Null -> "Null"
   | Return _ -> "Return"
   | Function _ -> "Function"
+  | Builtin _ -> "Builtin"
   | Error _ -> "Error"
 
 let compare x y = compare (show x) (show y)

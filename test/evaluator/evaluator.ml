@@ -59,6 +59,7 @@ let test_eval () =
       "let x = 5 * 5; x;";
       "let x = 5; let y = x; y";
       "\"hello world\"";
+      "\"hello\" + \" \" + \"world\"";
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -87,6 +88,7 @@ let test_eval () =
         Integer 25;
         Integer 5;
         String "hello world";
+        String "hello world";
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 
@@ -104,6 +106,7 @@ let test_error () =
       "-(-false)";
       "if (10 > true) { 1 + 2; }";
       "return -(-true)";
+      "\"hello\" - \"world\"";
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -126,6 +129,7 @@ let test_error () =
         Error "unknown operator: -(Object.Boolean false)";
         Error "type mismatch: Integer Token.GT Boolean";
         Error "unknown operator: -(Object.Boolean true)";
+        Error "unknown operator: hello Token.Minus world";
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
 

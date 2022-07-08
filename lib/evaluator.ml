@@ -100,6 +100,7 @@ and eval_prefix token right =
 and eval_infix token left right =
   match (token, left, right) with
   | _, Integer l, Integer r -> eval_integer_infix token l r
+  | _, String l, String r -> eval_string_infix token l r
   | Token.Eq, _, _ ->
     if Object.equal left right then trueObject else falseObject
   | Token.Not_Eq, _, _ ->
@@ -140,6 +141,13 @@ and eval_integer_infix token left right =
       ^ Token.show token
       ^ " "
       ^ string_of_int right)
+
+and eval_string_infix token left right =
+  match token with
+  | Token.Plus -> Object.String (left ^ right)
+  | _ ->
+    Object.Error
+      ("unknown operator: " ^ left ^ " " ^ Token.show token ^ " " ^ right)
 
 and eval_bang = function
   | Object.Boolean true -> falseObject

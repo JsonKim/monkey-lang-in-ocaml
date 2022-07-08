@@ -4,6 +4,7 @@ type t =
   (* 식별자 + 리터럴*)
   | Ident     of string
   | Int       of int
+  | String    of string
   (* 연산자 *)
   | Assign
   | Plus

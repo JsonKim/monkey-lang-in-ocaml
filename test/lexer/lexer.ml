@@ -26,7 +26,9 @@ let test_next_token () =
     \  return false;\n\
      }\n\n\
      10 == 10;\n\
-     10 != 9;\n" in
+     10 != 9;\n\
+     \"foobar\"\n\
+     \"foo bar\"\n" in
   let check = Alcotest.(check (list token_testable)) in
   let open Token in
   check "same token"
@@ -104,6 +106,8 @@ let test_next_token () =
       Not_Eq;
       Int 9;
       Semicolon;
+      String "foobar";
+      String "foo bar";
       EOF;
     ]
     (code_to_tokens code)

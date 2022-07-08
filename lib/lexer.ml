@@ -46,6 +46,21 @@ let read_number lex =
       (int_of_string acc, lex) in
   go "" lex
 
+let read_string lex =
+  let rec go lex acc =
+    if lex.ch == null_byte || lex.ch == '\n' then
+      (lex |> read_char, Token.Illegal "string must end with \". ")
+    else if lex.ch == '"' then
+      (lex |> read_char, Token.String acc)
+    else
+      go (read_char lex) (acc ^ String.make 1 lex.ch) in
+  if lex.ch == '"' then
+    go (lex |> read_char) ""
+  else
+    ( read_char lex,
+      Token.Illegal
+        ("string must start with \". current token: " ^ String.make 1 lex.ch) )
+
 let rec skip_whitespace lex =
   match lex.ch with
   | ' '
@@ -80,6 +95,7 @@ let next_token l =
   | ',' -> (read_char lex, Token.Comma)
   | '{' -> (read_char lex, Token.LBrace)
   | '}' -> (read_char lex, Token.RBrace)
+  | '"' -> read_string lex
   | '\x00' -> (read_char lex, Token.EOF)
   | _ ->
     if is_letter lex.ch then

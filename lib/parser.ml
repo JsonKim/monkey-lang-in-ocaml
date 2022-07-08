@@ -80,6 +80,7 @@ let parse_identifier p =
 
 let parse_int value p = (p, Some (value |> Ast.int_to_literal))
 let parse_boolean value p = (p, Some (value |> Ast.bool_to_literal))
+let parse_string value p = (p, Some (value |> Ast.string_to_literal))
 
 let rec parse_let_statement p =
   let p, is_expected_ident = expect_token (Token.Ident "") p in
@@ -111,6 +112,7 @@ and prefix_parse_fns p =
   | Token.Int value -> parse_int value p
   | Token.True -> parse_boolean true p
   | Token.False -> parse_boolean false p
+  | Token.String value -> parse_string value p
   | Token.Bang
   | Token.Minus ->
     parse_prefix_expression p

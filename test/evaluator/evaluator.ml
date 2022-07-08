@@ -58,6 +58,7 @@ let test_eval () =
       "let x = 5; x;";
       "let x = 5 * 5; x;";
       "let x = 5; let y = x; y";
+      "\"hello world\"";
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -85,6 +86,7 @@ let test_eval () =
         Integer 5;
         Integer 25;
         Integer 5;
+        String "hello world";
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

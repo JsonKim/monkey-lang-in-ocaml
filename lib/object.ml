@@ -1,6 +1,7 @@
 type t =
   | Integer  of int
   | Boolean  of bool
+  | String   of string
   | Null
   | Return   of t
   | Function of {
@@ -14,6 +15,7 @@ type t =
 let decode_tag_of = function
   | Integer _ -> "Integer"
   | Boolean _ -> "Boolean"
+  | String _ -> "String"
   | Null -> "Null"
   | Return _ -> "Return"
   | Function _ -> "Function"

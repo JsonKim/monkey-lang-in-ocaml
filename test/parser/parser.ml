@@ -126,6 +126,16 @@ let test_boolean_literal_expression () =
       ]
     (Lexer.make code |> To_test.ast)
 
+let test_string_literal_expression () =
+  let code = "\"hello world\";" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      Ast.ExpressionStatement
+        { expression = Ast.Literal (Ast.String "hello world") };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let test_prefix_expression () =
   let code = "!5;\n-15;" in
   let open Ast in
@@ -431,6 +441,8 @@ let () =
             test_integer_literal_expression;
           test_case "parse BooleanLiteralExpression" `Slow
             test_boolean_literal_expression;
+          test_case "parse StringLiteralExpression" `Slow
+            test_string_literal_expression;
           test_case "parse PrefixExpression" `Slow test_prefix_expression;
           test_case "parse InfixExpression" `Slow test_infix_expression;
           test_case "parse grouped Expression" `Slow test_grouped_expression;

@@ -90,7 +90,11 @@ and eval_expression env = function
   | Object.Array arr, env -> (
     match eval_expression env index with
     | Object.Error message, env -> (Object.Error message, env)
-    | index, env -> (eval_index arr index, env))
+    | index, env -> (eval_array_index arr index, env))
+  | Object.Hash hash, env -> (
+    match eval_expression env index with
+    | Object.Error message, env -> (Object.Error message, env)
+    | index, env -> (eval_hash_index hash index, env))
   | Object.Error message, env -> (Object.Error message, env)
   | obj, env ->
     ( Object.Error ("index operator not supported:" ^ Object.decode_tag_of obj),
@@ -196,7 +200,7 @@ and eval_minus right =
   | Object.Integer n -> Object.Integer (-n)
   | _ -> Object.Error ("unknown operator: -" ^ Object.show right)
 
-and eval_index arr index =
+and eval_array_index arr index =
   match index with
   | Object.Integer n when n < 0 -> Object.Null
   | Object.Integer n -> (
@@ -204,6 +208,14 @@ and eval_index arr index =
     | Some ele -> ele
     | None -> Object.Null)
   | _ ->
+    Object.Error ("index operator not supported: " ^ Object.decode_tag_of index)
+
+and eval_hash_index hash index =
+  if Object.is_hashable index then
+    match hash |> Object.Hash.find_opt (Object.show index) with
+    | Some { key = _; value } -> value
+    | None -> Object.Null
+  else
     Object.Error ("index operator not supported: " ^ Object.decode_tag_of index)
 
 and eval env node =

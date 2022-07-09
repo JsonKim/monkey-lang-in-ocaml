@@ -83,6 +83,13 @@ let test_eval () =
           false: 6
         }
       |};
+      {|{"foo":5}["foo"]|};
+      {|{"foo":5}["bar"]|};
+      {|let key = "foo"; {"foo":5}[key]|};
+      {|{}["foo"]|};
+      {|{5: 5}[5]|};
+      {|{true: 5}[true]|};
+      {|{false: 5}[false]|};
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -132,6 +139,13 @@ let test_eval () =
           |> add_hash (Integer 4) (Integer 4)
           |> add_hash (Boolean true) (Integer 5)
           |> add_hash (Boolean false) (Integer 6));
+        Integer 5;
+        Null;
+        Integer 5;
+        Null;
+        Integer 5;
+        Integer 5;
+        Integer 5;
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

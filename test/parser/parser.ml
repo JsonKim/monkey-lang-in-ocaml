@@ -169,7 +169,9 @@ let test_array_literal_expression () =
 
 let test_hash_literal_expression () =
   let code =
-    "{};\n{\"one\":1, \"two\":2, \"three\": 15 / 5, 1 < 2: \"1 < 2\"}" in
+    "{};\n\
+     {\"one\":1, \"two\":2, \"three\": 15 / 5, 1 < 2: \"1 < 2\"};\n\
+     [{\"name\":\"Alice\", \"age\":24},{\"name\":\"Anna\",\"age\": 28}]" in
   Alcotest.(check (list ast_testable))
     "same ast"
     [
@@ -196,6 +198,30 @@ let test_hash_literal_expression () =
                        } );
                    (Ast.Literal (Ast.String "two"), Ast.Literal (Ast.Integer 2));
                    (Ast.Literal (Ast.String "one"), Ast.Literal (Ast.Integer 1));
+                 ]);
+        };
+      Ast.ExpressionStatement
+        {
+          expression =
+            Ast.Literal
+              (Ast.Array
+                 [
+                   Ast.Literal
+                     (Ast.Hash
+                        [
+                          ( Ast.Literal (Ast.String "age"),
+                            Ast.Literal (Ast.Integer 24) );
+                          ( Ast.Literal (Ast.String "name"),
+                            Ast.Literal (Ast.String "Alice") );
+                        ]);
+                   Ast.Literal
+                     (Ast.Hash
+                        [
+                          ( Ast.Literal (Ast.String "age"),
+                            Ast.Literal (Ast.Integer 28) );
+                          ( Ast.Literal (Ast.String "name"),
+                            Ast.Literal (Ast.String "Anna") );
+                        ]);
                  ]);
         };
     ]

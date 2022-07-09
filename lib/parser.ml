@@ -119,6 +119,7 @@ and prefix_parse_fns p =
   | Token.LParen -> parse_grouped_expression p
   | Token.If -> parse_if_expression p
   | Token.Function -> parse_function_literal p
+  | Token.LBracket -> parse_expression_list p
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
@@ -268,6 +269,25 @@ and parse_call_arguments p =
   else
     let p = p |> next_token in
     parse_argument [] p
+
+and parse_expression_list p =
+  let rec go arr p =
+    match p.peek_token with
+    | Token.Comma ->
+      let p = p |> next_token |> next_token in
+      parse_element arr p
+    | Token.RBracket -> (p |> next_token, Some (arr |> Ast.array_to_literal))
+    | _ -> (p, None)
+  and parse_element arguments p =
+    match parse_expression lowest p with
+    | p, Some argument -> go (arguments @ [argument]) p
+    | p, None -> (p, None) in
+
+  if peek_token_is Token.RBracket p then
+    (p |> next_token, Some ([] |> Ast.array_to_literal))
+  else
+    let p = p |> next_token in
+    parse_element [] p
 
 and parse_expression precedence p =
   let rec go p left =

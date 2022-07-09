@@ -25,6 +25,7 @@ and eval_expression env = function
   | Literal (Boolean true) -> (trueObject, env)
   | Literal (Boolean false) -> (falseObject, env)
   | Literal (String str) -> (Object.String str, env)
+  | Literal (Array _arr) -> (Object.Null, env)
   | Prefix { token; right } -> (
     match eval_expression env right with
     | Object.Error message, env -> (Object.Error message, env)

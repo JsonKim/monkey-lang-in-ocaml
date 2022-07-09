@@ -21,6 +21,7 @@ and literal =
   | Integer of int
   | Boolean of bool
   | String  of string
+  | Array   of expression list
 [@@deriving show]
 
 and expression =
@@ -53,3 +54,4 @@ and expression =
 let int_to_literal x = Literal (Integer x)
 let bool_to_literal x = Literal (Boolean x)
 let string_to_literal x = Literal (String x)
+let array_to_literal x = Literal (Array x)

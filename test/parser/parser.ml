@@ -136,6 +136,37 @@ let test_string_literal_expression () =
     ]
     (Lexer.make code |> To_test.ast)
 
+let test_array_literal_expression () =
+  let code = "[1, 2 + 2, 3 * 4, \"test\"]" in
+  let open Ast in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      ExpressionStatement
+        {
+          expression =
+            Literal
+              (Array
+                 [
+                   Literal (Integer 1);
+                   Infix
+                     {
+                       token = Token.Plus;
+                       left = Literal (Integer 2);
+                       right = Literal (Integer 2);
+                     };
+                   Infix
+                     {
+                       token = Token.Asterisk;
+                       left = Literal (Integer 3);
+                       right = Literal (Integer 4);
+                     };
+                   Literal (String "test");
+                 ]);
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let test_prefix_expression () =
   let code = "!5;\n-15;" in
   let open Ast in
@@ -443,6 +474,8 @@ let () =
             test_boolean_literal_expression;
           test_case "parse StringLiteralExpression" `Slow
             test_string_literal_expression;
+          test_case "parse ArrayLiteralExpression" `Slow
+            test_array_literal_expression;
           test_case "parse PrefixExpression" `Slow test_prefix_expression;
           test_case "parse InfixExpression" `Slow test_infix_expression;
           test_case "parse grouped Expression" `Slow test_grouped_expression;

@@ -119,7 +119,10 @@ and prefix_parse_fns p =
   | Token.LParen -> parse_grouped_expression p
   | Token.If -> parse_if_expression p
   | Token.Function -> parse_function_literal p
-  | Token.LBracket -> parse_expression_list p
+  | Token.LBracket -> (
+    match parse_expression_list Token.RBracket p with
+    | p, Some arr -> (p, Some (arr |> Ast.array_to_literal))
+    | p, None -> (p, None))
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
@@ -247,44 +250,25 @@ and parse_infix_expression left p =
   | p, None -> (p, None)
 
 and parse_call_expression fn p =
-  match parse_call_arguments p with
+  match parse_expression_list Token.RParen p with
   | p, Some arguments -> (p, Some (Ast.Call { fn; arguments }))
   | p, None -> (p, None)
 
-and parse_call_arguments p =
-  let rec go arguments p =
-    match p.peek_token with
-    | Token.Comma ->
-      let p = p |> next_token |> next_token in
-      parse_argument arguments p
-    | Token.RParen -> (p |> next_token, Some arguments)
-    | _ -> (p, None)
-  and parse_argument arguments p =
-    match parse_expression lowest p with
-    | p, Some argument -> go (arguments @ [argument]) p
-    | p, None -> (p, None) in
-
-  if peek_token_is Token.RParen p then
-    (p |> next_token, Some [])
-  else
-    let p = p |> next_token in
-    parse_argument [] p
-
-and parse_expression_list p =
+and parse_expression_list end_token p =
   let rec go arr p =
     match p.peek_token with
     | Token.Comma ->
       let p = p |> next_token |> next_token in
       parse_element arr p
-    | Token.RBracket -> (p |> next_token, Some (arr |> Ast.array_to_literal))
+    | peek when Token.equal peek end_token -> (p |> next_token, Some arr)
     | _ -> (p, None)
-  and parse_element arguments p =
+  and parse_element elements p =
     match parse_expression lowest p with
-    | p, Some argument -> go (arguments @ [argument]) p
+    | p, Some element -> go (elements @ [element]) p
     | p, None -> (p, None) in
 
-  if peek_token_is Token.RBracket p then
-    (p |> next_token, Some ([] |> Ast.array_to_literal))
+  if peek_token_is end_token p then
+    (p |> next_token, Some [])
   else
     let p = p |> next_token in
     parse_element [] p

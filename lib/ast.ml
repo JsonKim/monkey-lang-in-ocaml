@@ -49,6 +49,10 @@ and expression =
       fn : expression;
       arguments : expression list;
     }
+  | Index      of {
+      left : expression;
+      index : expression;
+    }
 [@@deriving show]
 
 let int_to_literal x = Literal (Integer x)

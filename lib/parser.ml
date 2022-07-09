@@ -23,6 +23,7 @@ let precedence tok =
   | Token.Asterisk ->
     5
   | Token.LParen -> 7
+  | Token.LBracket -> 8
   | _ -> lowest
 
 let next_token p =
@@ -232,6 +233,7 @@ and infix_parse_fns p =
   | Token.GT ->
     Some parse_infix_expression
   | Token.LParen -> Some parse_call_expression
+  | Token.LBracket -> Some parse_index
   | _ -> None
 
 and parse_prefix_expression p =
@@ -252,6 +254,14 @@ and parse_infix_expression left p =
 and parse_call_expression fn p =
   match parse_expression_list Token.RParen p with
   | p, Some arguments -> (p, Some (Ast.Call { fn; arguments }))
+  | p, None -> (p, None)
+
+and parse_index left p =
+  match parse_expression lowest (p |> next_token) with
+  | p, Some index -> (
+    match expect_token Token.RBracket p with
+    | p, true -> (p, Some (Ast.Index { left; index }))
+    | p, false -> (p, None))
   | p, None -> (p, None)
 
 and parse_expression_list end_token p =

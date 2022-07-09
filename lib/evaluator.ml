@@ -57,14 +57,16 @@ and eval_expression env = function
       | _ -> (Object.Error ("identifier not found: " ^ ident), env)))
   | Function { parameters; body } ->
     (Object.Function { parameters; body; env }, env)
-  | Call { fn; arguments } ->
-  match eval_expression env fn with
-  | Object.Error message, env -> (Object.Error message, env)
-  | fn, env ->
-  match eval_expressions env arguments with
-  | [], env -> (Object.Error "arguments is empty", env)
-  | [Object.Error message], env -> (Object.Error message, env)
-  | args, env -> (apply_function fn args, env)
+  | Call { fn; arguments } -> (
+    match eval_expression env fn with
+    | Object.Error message, env -> (Object.Error message, env)
+    | fn, env ->
+    match eval_expressions env arguments with
+    | [], env -> (Object.Error "arguments is empty", env)
+    | [Object.Error message], env -> (Object.Error message, env)
+    | args, env -> (apply_function fn args, env))
+  (* TODO: index 평가 구현 *)
+  | Index _ -> (Object.Null, env)
 
 and eval_expressions env args =
   let rec go env acc = function

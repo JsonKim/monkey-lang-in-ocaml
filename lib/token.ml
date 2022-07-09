@@ -23,6 +23,8 @@ type t =
   | RParen
   | LBrace
   | RBrace
+  | LBracket
+  | RBracket
   (* 예약어 *)
   | Function
   | Let

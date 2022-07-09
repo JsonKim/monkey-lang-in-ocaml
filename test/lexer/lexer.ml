@@ -28,7 +28,8 @@ let test_next_token () =
      10 == 10;\n\
      10 != 9;\n\
      \"foobar\"\n\
-     \"foo bar\"\n" in
+     \"foo bar\"\n\
+     [1, 2, foo, \"bar\"]\n" in
   let check = Alcotest.(check (list token_testable)) in
   let open Token in
   check "same token"
@@ -108,6 +109,15 @@ let test_next_token () =
       Semicolon;
       String "foobar";
       String "foo bar";
+      LBracket;
+      Int 1;
+      Comma;
+      Int 2;
+      Comma;
+      Ident "foo";
+      Comma;
+      String "bar";
+      RBracket;
       EOF;
     ]
     (code_to_tokens code)

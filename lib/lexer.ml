@@ -95,6 +95,8 @@ let next_token l =
   | ',' -> (read_char lex, Token.Comma)
   | '{' -> (read_char lex, Token.LBrace)
   | '}' -> (read_char lex, Token.RBrace)
+  | '[' -> (read_char lex, Token.LBracket)
+  | ']' -> (read_char lex, Token.RBracket)
   | '"' -> read_string lex
   | '\x00' -> (read_char lex, Token.EOF)
   | _ ->

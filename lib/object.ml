@@ -1,3 +1,5 @@
+module Hash = Map.Make (String)
+
 type t =
   | Integer  of int
   | Boolean  of bool
@@ -11,8 +13,24 @@ type t =
     }
   | Builtin  of { fn : t list -> t [@equal fun _ _ -> false] }
   | Array    of t list
+  | Hash     of (hash_pair Hash.t[@opaque])
   | Error    of string
+
+and hash_pair = {
+  key : t;
+  value : t;
+}
 [@@deriving show, eq]
+
+let is_hashable = function
+  | Integer _
+  | Boolean _
+  | String _ ->
+    true
+  | _ -> false
+
+let empty_hash = Hash.empty
+let add_hash key value hash = Hash.add (key |> show) { key; value } hash
 
 let decode_tag_of = function
   | Integer _ -> "Integer"
@@ -23,6 +41,7 @@ let decode_tag_of = function
   | Function _ -> "Function"
   | Builtin _ -> "Builtin"
   | Array _ -> "Array"
+  | Hash _ -> "Hash"
   | Error _ -> "Error"
 
 let compare x y = compare (show x) (show y)

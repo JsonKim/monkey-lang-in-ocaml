@@ -31,7 +31,21 @@ and eval_expression env = function
       (acc @ [ele], env) in
     match List.fold_left fn ([], env) arr with
     | acc, env -> (Object.Array acc, env))
-  | Literal (Hash _) -> (Object.Null, env)
+  | Literal (Hash hash) -> (
+    let fn (acc, env) (key, value) =
+      match acc with
+      | Object.Hash acc -> (
+        match eval_expression env key with
+        | key, env when Object.is_hashable key ->
+          let value, env = eval_expression env value in
+          (Object.Hash (Object.add_hash key value acc), env)
+        | key, env ->
+          ( Object.Error ("unusable as hash key: " ^ Object.decode_tag_of key),
+            env ))
+      | _ -> (Object.Error "not reach here", env) in
+
+    match List.fold_left fn (Object.Hash Object.empty_hash, env) hash with
+    | acc, env -> (acc, env))
   | Prefix { token; right } -> (
     match eval_expression env right with
     | Object.Error message, env -> (Object.Error message, env)

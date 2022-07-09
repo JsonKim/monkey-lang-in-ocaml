@@ -72,6 +72,17 @@ let test_eval () =
       "let myArray = [1,2,3]; let i = myArray[0]; myArray[i]";
       "[1,2,3][3]";
       "[1,2,3][-1]";
+      {|
+        let two = "two";
+        {
+          "one": 10 - 9,
+          two: 1 + 1,
+          "thr" + "ee": 6 / 2,
+          4: 4,
+          true: 5,
+          false: 6
+        }
+      |};
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -113,6 +124,14 @@ let test_eval () =
         Integer 2;
         Null;
         Null;
+        Hash
+          (empty_hash
+          |> add_hash (String "one") (Integer 1)
+          |> add_hash (String "two") (Integer 2)
+          |> add_hash (String "three") (Integer 3)
+          |> add_hash (Integer 4) (Integer 4)
+          |> add_hash (Boolean true) (Integer 5)
+          |> add_hash (Boolean false) (Integer 6));
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

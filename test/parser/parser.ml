@@ -168,7 +168,8 @@ let test_array_literal_expression () =
     (Lexer.make code |> To_test.ast)
 
 let test_hash_literal_expression () =
-  let code = "{};\n{\"one\":1, \"two\":2, \"three\": 15 / 5}" in
+  let code =
+    "{};\n{\"one\":1, \"two\":2, \"three\": 15 / 5, 1 < 2: \"1 < 2\"}" in
   Alcotest.(check (list ast_testable))
     "same ast"
     [
@@ -179,6 +180,13 @@ let test_hash_literal_expression () =
             Ast.Literal
               (Ast.Hash
                  [
+                   ( Ast.Infix
+                       {
+                         token = Token.LT;
+                         left = Ast.Literal (Ast.Integer 1);
+                         right = Ast.Literal (Ast.Integer 2);
+                       },
+                     Ast.Literal (Ast.String "1 < 2") );
                    ( Ast.Literal (Ast.String "three"),
                      Ast.Infix
                        {

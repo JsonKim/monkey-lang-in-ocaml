@@ -63,6 +63,13 @@ let push args =
       ^ (args |> List.length |> string_of_int)
       ^ ", want=1")
 
+let rec puts args =
+  match args with
+  | [] -> Object.Null
+  | h :: t ->
+    print_endline (Object.show h);
+    puts t
+
 let fns =
   Builtin.empty
   |> Builtin.add "len" (Object.Builtin { fn = len })
@@ -70,3 +77,4 @@ let fns =
   |> Builtin.add "last" (Object.Builtin { fn = last })
   |> Builtin.add "rest" (Object.Builtin { fn = rest })
   |> Builtin.add "push" (Object.Builtin { fn = push })
+  |> Builtin.add "puts" (Object.Builtin { fn = puts })

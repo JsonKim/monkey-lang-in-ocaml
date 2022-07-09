@@ -304,9 +304,11 @@ and parse_hash p =
       | p, false -> (p, None))
     | p, None -> (p, None) in
 
-  match expect_token Token.RBrace p with
-  | p, true -> (p, Some ([] |> Ast.hash_to_literal))
-  | p, false -> parse_key_value [] (p |> next_token)
+  if peek_token_is Token.RBrace p then
+    (p |> next_token, Some ([] |> Ast.hash_to_literal))
+  else
+    let p = p |> next_token in
+    parse_key_value [] p
 
 and parse_expression precedence p =
   let rec go p left =

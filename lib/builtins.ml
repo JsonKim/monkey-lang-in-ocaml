@@ -3,6 +3,7 @@ module Builtin = Map.Make (String)
 let len args =
   match args with
   | [Object.String str] -> Object.Integer (str |> String.length)
+  | [Object.Array arr] -> Object.Integer (arr |> List.length)
   | [arg] ->
     Object.Error
       ("argument to len not supported, got " ^ Object.decode_tag_of arg)

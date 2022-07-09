@@ -192,6 +192,7 @@ let test_function_application () =
       "let add = fn(x, y) { x + y; }; add(3, 7)";
       "let add = fn(x, y) { x + y; }; add(add(2, 3), add(4,5));";
       "len(\"test\");";
+      "len([1,2,3]);";
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -202,6 +203,7 @@ let test_function_application () =
       Object.Integer 10;
       Object.Integer 14;
       Object.Integer 4;
+      Object.Integer 3;
     ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
 

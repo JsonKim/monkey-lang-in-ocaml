@@ -167,6 +167,32 @@ let test_array_literal_expression () =
     ]
     (Lexer.make code |> To_test.ast)
 
+let test_hash_literal_expression () =
+  let code = "{};\n{\"one\":1, \"two\":2, \"three\": 15 / 5}" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      Ast.ExpressionStatement { expression = Ast.Literal (Ast.Hash []) };
+      Ast.ExpressionStatement
+        {
+          expression =
+            Ast.Literal
+              (Ast.Hash
+                 [
+                   ( Ast.Literal (Ast.String "three"),
+                     Ast.Infix
+                       {
+                         token = Token.Slash;
+                         left = Ast.Literal (Ast.Integer 15);
+                         right = Ast.Literal (Ast.Integer 5);
+                       } );
+                   (Ast.Literal (Ast.String "two"), Ast.Literal (Ast.Integer 2));
+                   (Ast.Literal (Ast.String "one"), Ast.Literal (Ast.Integer 1));
+                 ]);
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let test_array_index_expression () =
   let code =
     "myArray[1 + 1]\n\
@@ -575,6 +601,8 @@ let () =
             test_string_literal_expression;
           test_case "parse ArrayLiteralExpression" `Slow
             test_array_literal_expression;
+          test_case "parse HashLiteralExpression" `Slow
+            test_hash_literal_expression;
           test_case "parse ArrayIndexExpression" `Slow
             test_array_index_expression;
           test_case "parse PrefixExpression" `Slow test_prefix_expression;

@@ -31,6 +31,7 @@ and eval_expression env = function
       (acc @ [ele], env) in
     match List.fold_left fn ([], env) arr with
     | acc, env -> (Object.Array acc, env))
+  | Literal (Hash _) -> (Object.Null, env)
   | Prefix { token; right } -> (
     match eval_expression env right with
     | Object.Error message, env -> (Object.Error message, env)

@@ -19,6 +19,7 @@ type t =
   (* 구분자 *)
   | Comma
   | Semicolon
+  | Colon
   | LParen
   | RParen
   | LBrace

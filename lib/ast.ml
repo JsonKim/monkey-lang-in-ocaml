@@ -22,6 +22,7 @@ and literal =
   | Boolean of bool
   | String  of string
   | Array   of expression list
+  | Hash    of (expression * expression) list
 [@@deriving show]
 
 and expression =
@@ -59,3 +60,4 @@ let int_to_literal x = Literal (Integer x)
 let bool_to_literal x = Literal (Boolean x)
 let string_to_literal x = Literal (String x)
 let array_to_literal x = Literal (Array x)
+let hash_to_literal x = Literal (Hash x)

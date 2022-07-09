@@ -90,6 +90,7 @@ let next_token l =
   | '<' -> (read_char lex, Token.LT)
   | '>' -> (read_char lex, Token.GT)
   | ';' -> (read_char lex, Token.Semicolon)
+  | ':' -> (read_char lex, Token.Colon)
   | '(' -> (read_char lex, Token.LParen)
   | ')' -> (read_char lex, Token.RParen)
   | ',' -> (read_char lex, Token.Comma)

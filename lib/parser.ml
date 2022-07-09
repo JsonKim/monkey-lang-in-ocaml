@@ -124,6 +124,7 @@ and prefix_parse_fns p =
     match parse_expression_list Token.RBracket p with
     | p, Some arr -> (p, Some (arr |> Ast.array_to_literal))
     | p, None -> (p, None))
+  | Token.LBrace -> parse_hash p
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
@@ -282,6 +283,30 @@ and parse_expression_list end_token p =
   else
     let p = p |> next_token in
     parse_element [] p
+
+and parse_hash p =
+  let rec go acc p =
+    match p.peek_token with
+    | Token.Comma ->
+      let p = p |> next_token |> next_token in
+      parse_key_value acc p
+    | Token.RBrace -> (p |> next_token, Some (acc |> Ast.hash_to_literal))
+    | _ -> (p, None)
+  and parse_key_value acc p =
+    match parse_expression lowest p with
+    | p, Some key -> (
+      match expect_token Token.Colon p with
+      | p, true -> (
+        match parse_expression lowest (p |> next_token) with
+        | p, Some value ->
+          go (acc |> List.remove_assoc key |> List.cons (key, value)) p
+        | p, None -> (p, None))
+      | p, false -> (p, None))
+    | p, None -> (p, None) in
+
+  match expect_token Token.RBrace p with
+  | p, true -> (p, Some ([] |> Ast.hash_to_literal))
+  | p, false -> parse_key_value [] (p |> next_token)
 
 and parse_expression precedence p =
   let rec go p left =

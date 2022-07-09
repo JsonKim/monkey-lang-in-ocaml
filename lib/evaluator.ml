@@ -25,7 +25,12 @@ and eval_expression env = function
   | Literal (Boolean true) -> (trueObject, env)
   | Literal (Boolean false) -> (falseObject, env)
   | Literal (String str) -> (Object.String str, env)
-  | Literal (Array _arr) -> (Object.Null, env)
+  | Literal (Array arr) -> (
+    let fn (acc, env) ele =
+      let ele, env = eval_expression env ele in
+      (acc @ [ele], env) in
+    match List.fold_left fn ([], env) arr with
+    | acc, env -> (Object.Array acc, env))
   | Prefix { token; right } -> (
     match eval_expression env right with
     | Object.Error message, env -> (Object.Error message, env)

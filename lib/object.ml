@@ -10,6 +10,7 @@ type t =
       env : t Environment.t;
     }
   | Builtin  of { fn : t list -> t [@equal fun _ _ -> false] }
+  | Array    of t list
   | Error    of string
 [@@deriving show, eq]
 
@@ -21,6 +22,7 @@ let decode_tag_of = function
   | Return _ -> "Return"
   | Function _ -> "Function"
   | Builtin _ -> "Builtin"
+  | Array _ -> "Array"
   | Error _ -> "Error"
 
 let compare x y = compare (show x) (show y)

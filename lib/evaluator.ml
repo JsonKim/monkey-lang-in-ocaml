@@ -70,8 +70,16 @@ and eval_expression env = function
     | [], env -> (Object.Error "arguments is empty", env)
     | [Object.Error message], env -> (Object.Error message, env)
     | args, env -> (apply_function fn args, env))
-  (* TODO: index 평가 구현 *)
-  | Index _ -> (Object.Null, env)
+  | Index { left; index } ->
+  match eval_expression env left with
+  | Object.Array arr, env -> (
+    match eval_expression env index with
+    | Object.Error message, env -> (Object.Error message, env)
+    | index, env -> (eval_index arr index, env))
+  | Object.Error message, env -> (Object.Error message, env)
+  | obj, env ->
+    ( Object.Error ("index operator not supported:" ^ Object.decode_tag_of obj),
+      env )
 
 and eval_expressions env args =
   let rec go env acc = function
@@ -172,6 +180,16 @@ and eval_minus right =
   match right with
   | Object.Integer n -> Object.Integer (-n)
   | _ -> Object.Error ("unknown operator: -" ^ Object.show right)
+
+and eval_index arr index =
+  match index with
+  | Object.Integer n when n < 0 -> Object.Null
+  | Object.Integer n -> (
+    match List.nth_opt arr n with
+    | Some ele -> ele
+    | None -> Object.Null)
+  | _ ->
+    Object.Error ("index operator not supported: " ^ Object.decode_tag_of index)
 
 and eval env node =
   match node with

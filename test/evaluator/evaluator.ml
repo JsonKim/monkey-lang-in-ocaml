@@ -62,6 +62,16 @@ let test_eval () =
       "\"hello\" + \" \" + \"world\"";
       "[1, 2, 3]";
       "[1 + 2, 3 * 4, [1,2,3]]";
+      "[1,2,3][0]";
+      "[1,2,3][1]";
+      "[1,2,3][2]";
+      "let i = 0; [1][i];";
+      "[1,2,3][1 + 1]";
+      "let myArray = [1,2,3]; myArray[2];";
+      "let myArray = [1,2,3]; myArray[0] + myArray[1] + myArray[2];";
+      "let myArray = [1,2,3]; let i = myArray[0]; myArray[i]";
+      "[1,2,3][3]";
+      "[1,2,3][-1]";
     ] in
   Alcotest.(check (list evaluator_testable))
     "same object"
@@ -93,6 +103,16 @@ let test_eval () =
         String "hello world";
         Array [Integer 1; Integer 2; Integer 3];
         Array [Integer 3; Integer 12; Array [Integer 1; Integer 2; Integer 3]];
+        Integer 1;
+        Integer 2;
+        Integer 3;
+        Integer 1;
+        Integer 3;
+        Integer 3;
+        Integer 6;
+        Integer 2;
+        Null;
+        Null;
       ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval))
 

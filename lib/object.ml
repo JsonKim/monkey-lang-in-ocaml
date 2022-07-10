@@ -14,6 +14,7 @@ type t =
   | Builtin  of { fn : t list -> t [@equal fun _ _ -> false] }
   | Array    of t list
   | Hash     of (hash_pair Hash.t[@opaque])
+  | Quote    of Ast.expression
   | Error    of string
 
 and hash_pair = {
@@ -42,6 +43,7 @@ let decode_tag_of = function
   | Builtin _ -> "Builtin"
   | Array _ -> "Array"
   | Hash _ -> "Hash"
+  | Quote _ -> "Quote"
   | Error _ -> "Error"
 
 let compare x y = compare (show x) (show y)

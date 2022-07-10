@@ -261,6 +261,29 @@ let test_closures () =
     "same object" [Object.Integer 5]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
 
+let test_quote () =
+  let code = ["quote(5 + 8)"; "quote(foobar)"; "quote(foobar + barfoo)"] in
+  Alcotest.(check (list evaluator_testable))
+    "same object"
+    [
+      Object.Quote
+        (Ast.Infix
+           {
+             token = Token.Plus;
+             left = Ast.Literal (Ast.Integer 5);
+             right = Ast.Literal (Ast.Integer 8);
+           });
+      Object.Quote (Ast.Identifier "foobar");
+      Object.Quote
+        (Ast.Infix
+           {
+             token = Token.Plus;
+             left = Ast.Identifier "foobar";
+             right = Ast.Identifier "barfoo";
+           });
+    ]
+    (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -272,4 +295,5 @@ let () =
         [test_case "function application" `Slow test_function_application] );
       ("closure test", [test_case "closure" `Slow test_closures]);
       ("error test", [test_case "error" `Slow test_error]);
+      ("quote test", [test_case "quote" `Slow test_quote]);
     ]

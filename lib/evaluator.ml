@@ -8,6 +8,16 @@ let is_truthy = function
   | Object.Boolean b -> b
   | _ -> true
 
+let quote env arguments =
+  if List.length arguments == 1 then
+    (Object.Quote (List.nth arguments 0), env)
+  else
+    ( Object.Error
+        ("wrong number of arguments. got="
+        ^ (arguments |> List.length |> string_of_int)
+        ^ ", want=1"),
+      env )
+
 let rec eval_statement env node =
   match node with
   | ExpressionStatement { expression } -> eval_expression env expression
@@ -78,6 +88,9 @@ and eval_expression env = function
   | Function { parameters; body } ->
     (Object.Function { parameters; body; env }, env)
   | Call { fn; arguments } -> (
+    match fn with
+    | Ast.Identifier "quote" -> quote env arguments
+    | _ ->
     match eval_expression env fn with
     | Object.Error message, env -> (Object.Error message, env)
     | fn, env ->

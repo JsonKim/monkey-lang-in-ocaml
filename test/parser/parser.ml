@@ -10,6 +10,7 @@ module To_test = struct
 end
 
 let ast_testable = Alcotest.testable Ast.pp_statement Ast.equal_statement
+let ast_node_testable = Alcotest.testable Ast.pp_node Ast.equal_node
 
 let test_let_statements () =
   let code =
@@ -617,6 +618,47 @@ let test_call_expression () =
     ]
     (Lexer.make code |> To_test.ast)
 
+let test_modify () =
+  let open Ast in
+  let parse_code code =
+    code
+    |> Lexer.make
+    |> Parser.make
+    |> Parser.parse_expression_statement
+    |> snd
+    |> Option.get in
+  let parse code = Statement (code |> parse_code) in
+  let turnOneIntoTwo = function
+    | Expression (Literal (Integer 1)) -> Expression (2 |> int_to_literal)
+    | node -> node in
+  let ast =
+    [
+      parse "2";
+      parse "2 + 2";
+      parse "2 + 2";
+      parse "-2";
+      parse "2[2]";
+      parse "if (2) { let x = 2; } else { return 2 }";
+      parse "fn (x) { x + 2 }";
+      parse "[2, 2]";
+      parse "{ 2: 2, 2: 2 }";
+    ] in
+  Alcotest.(check (list ast_node_testable))
+    "same ast"
+    [
+      Modify.modify turnOneIntoTwo (parse "1");
+      Modify.modify turnOneIntoTwo (parse "1 + 2");
+      Modify.modify turnOneIntoTwo (parse "2 + 1");
+      Modify.modify turnOneIntoTwo (parse "-1");
+      Modify.modify turnOneIntoTwo (parse "1[1]");
+      Modify.modify turnOneIntoTwo
+        (parse "if (1) { let x = 1; } else { return 1 }");
+      Modify.modify turnOneIntoTwo (parse "fn (x) { x + 1 }");
+      Modify.modify turnOneIntoTwo (parse "[1, 1]");
+      Modify.modify turnOneIntoTwo (parse "{ 1: 1, 1: 1 }");
+    ]
+    ast
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -647,5 +689,6 @@ let () =
           test_case "parse function literal Expression" `Slow
             test_function_literal_expression;
           test_case "parse call Expression" `Slow test_call_expression;
+          test_case "modify Expression" `Slow test_modify;
         ] );
     ]

@@ -1,5 +1,7 @@
 open Ast
 
+exception Not_Convert
+
 let trueObject = Object.Boolean true
 let falseObject = Object.Boolean false
 
@@ -7,16 +9,6 @@ let is_truthy = function
   | Object.Null -> false
   | Object.Boolean b -> b
   | _ -> true
-
-let quote env arguments =
-  if List.length arguments == 1 then
-    (Object.Quote (List.nth arguments 0), env)
-  else
-    ( Object.Error
-        ("wrong number of arguments. got="
-        ^ (arguments |> List.length |> string_of_int)
-        ^ ", want=1"),
-      env )
 
 let rec eval_statement env node =
   match node with
@@ -258,3 +250,28 @@ and eval_block_statement env block_statement =
     | Object.Error message, env -> (Object.Error message, env)
     | result, env -> go (result, env) t in
   go (Object.Null, env) block_statement
+
+and convert_object_to_ast_node = function
+  | Object.Integer n -> n |> Ast.int_to_literal
+  | Object.Boolean b -> b |> Ast.bool_to_literal
+  | Object.Quote expression -> expression
+  | _ -> raise Not_Convert
+
+and quote env arguments =
+  if List.length arguments == 1 then
+    let arg = List.nth arguments 0 in
+    let arg =
+      Modify.modify_expression
+        (function
+          | Expression (Call { fn = Identifier "unquote"; arguments }) ->
+            let obj, _ = eval_expression env (List.nth arguments 0) in
+            Expression (obj |> convert_object_to_ast_node)
+          | node -> node)
+        arg in
+    (Object.Quote arg, env)
+  else
+    ( Object.Error
+        ("wrong number of arguments. got="
+        ^ (arguments |> List.length |> string_of_int)
+        ^ ", want=1"),
+      env )

@@ -284,6 +284,67 @@ let test_quote () =
     ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
 
+let test_quote_unqute () =
+  let code =
+    [
+      "quote(unquote(4))";
+      "quote(unquote(4 + 4))";
+      "quote(8 + unquote(4 + 4))";
+      "quote(unquote(4 + 4) + 8)";
+      "let foobar = 8; quote(foobar)";
+      "let foobar = 8; quote(unquote(foobar))";
+      "quote(unquote(true))";
+      "quote(unquote(true == false))";
+      "quote(unquote(quote(4 + 4)))";
+      "let quotedInfixExpression = quote(4 + 4);\n\
+       quote(unquote(4 + 4) + unquote(quotedInfixExpression))";
+    ] in
+  Alcotest.(check (list evaluator_testable))
+    "same object"
+    [
+      Object.Quote (Ast.Literal (Ast.Integer 4));
+      Object.Quote (Ast.Literal (Ast.Integer 8));
+      Object.Quote
+        (Ast.Infix
+           {
+             token = Token.Plus;
+             left = Ast.Literal (Ast.Integer 8);
+             right = Ast.Literal (Ast.Integer 8);
+           });
+      Object.Quote
+        (Ast.Infix
+           {
+             token = Token.Plus;
+             left = Ast.Literal (Ast.Integer 8);
+             right = Ast.Literal (Ast.Integer 8);
+           });
+      Object.Quote (Ast.Identifier "foobar");
+      Object.Quote (Ast.Literal (Ast.Integer 8));
+      Object.Quote (Ast.Literal (Ast.Boolean true));
+      Object.Quote (Ast.Literal (Ast.Boolean false));
+      Object.Quote
+        (Ast.Infix
+           {
+             token = Token.Plus;
+             left = Ast.Literal (Ast.Integer 4);
+             right = Ast.Literal (Ast.Integer 4);
+           });
+      Object.Quote
+        (Ast.Infix
+           {
+             token = Token.Plus;
+             left = Ast.Literal (Ast.Integer 8);
+             right =
+               Ast.Infix
+                 {
+                   token = Token.Plus;
+                   left = Ast.Literal (Ast.Integer 4);
+                   right = Ast.Literal (Ast.Integer 4);
+                 };
+           });
+    ]
+    (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -296,4 +357,5 @@ let () =
       ("closure test", [test_case "closure" `Slow test_closures]);
       ("error test", [test_case "error" `Slow test_error]);
       ("quote test", [test_case "quote" `Slow test_quote]);
+      ("quote-unquote test", [test_case "quote-unquote" `Slow test_quote_unqute]);
     ]

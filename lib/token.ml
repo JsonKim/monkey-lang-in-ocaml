@@ -34,6 +34,7 @@ type t =
   | If
   | Else
   | Return
+  | Macro
 [@@deriving show, eq]
 
 let keywords literal =
@@ -45,4 +46,5 @@ let keywords literal =
   | "if" -> If
   | "else" -> Else
   | "return" -> Return
+  | "macro" -> Macro
   | _ -> Ident literal

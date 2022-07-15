@@ -30,7 +30,8 @@ let test_next_token () =
      \"foobar\"\n\
      \"foo bar\"\n\
      [1, 2, foo, \"bar\"]\n\
-     {\"foo\": \"bar\"}\n" in
+     {\"foo\": \"bar\"}\n\
+     macro(x, y) { x + y; }\n" in
   let check = Alcotest.(check (list token_testable)) in
   let open Token in
   check "same token"
@@ -123,6 +124,18 @@ let test_next_token () =
       String "foo";
       Colon;
       String "bar";
+      RBrace;
+      Macro;
+      LParen;
+      Ident "x";
+      Comma;
+      Ident "y";
+      RParen;
+      LBrace;
+      Ident "x";
+      Plus;
+      Ident "y";
+      Semicolon;
       RBrace;
       EOF;
     ]

@@ -15,13 +15,21 @@ type t =
   | Array    of t list
   | Hash     of (hash_pair Hash.t[@opaque])
   | Quote    of Ast.expression
+  | Macro    of macro
   | Error    of string
+
+and macro = {
+  parameters : Ast.identifier list;
+  body : Ast.blockStatement;
+  env : t Environment.t;
+}
 
 and hash_pair = {
   key : t;
   value : t;
 }
-[@@deriving show, eq]
+
+and option_t = t option [@@deriving show, eq]
 
 let is_hashable = function
   | Integer _
@@ -44,6 +52,7 @@ let decode_tag_of = function
   | Array _ -> "Array"
   | Hash _ -> "Hash"
   | Quote _ -> "Quote"
+  | Macro _ -> "Macro"
   | Error _ -> "Error"
 
 let compare x y = compare (show x) (show y)

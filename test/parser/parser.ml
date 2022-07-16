@@ -659,6 +659,36 @@ let test_modify () =
     ]
     ast
 
+let test_macro_literal_parsing () =
+  let code = "macro(x, y) { x + y; }" in
+  Alcotest.(check (list ast_testable))
+    "same ast"
+    [
+      Ast.ExpressionStatement
+        {
+          expression =
+            Ast.Literal
+              (Ast.Macro
+                 {
+                   parameters = ["x"; "y"];
+                   body =
+                     [
+                       Ast.ExpressionStatement
+                         {
+                           expression =
+                             Ast.Infix
+                               {
+                                 token = Token.Plus;
+                                 left = Ast.Identifier "x";
+                                 right = Ast.Identifier "y";
+                               };
+                         };
+                     ];
+                 });
+        };
+    ]
+    (Lexer.make code |> To_test.ast)
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -690,5 +720,6 @@ let () =
             test_function_literal_expression;
           test_case "parse call Expression" `Slow test_call_expression;
           test_case "modify Expression" `Slow test_modify;
+          test_case "macro literal parsing" `Slow test_macro_literal_parsing;
         ] );
     ]

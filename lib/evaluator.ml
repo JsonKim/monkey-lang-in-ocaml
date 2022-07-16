@@ -48,6 +48,7 @@ and eval_expression env = function
 
     match List.fold_left fn (Object.Hash Object.empty_hash, env) hash with
     | acc, env -> (acc, env))
+  | Literal (Macro _) -> (Object.Error "macro can't be evaluated", env)
   | Prefix { token; right } -> (
     match eval_expression env right with
     | Object.Error message, env -> (Object.Error message, env)

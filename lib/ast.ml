@@ -17,12 +17,18 @@ and statement =
 and blockStatement = statement list [@@deriving show]
 and identifier = string
 
+and macro = {
+  parameters : identifier list;
+  body : blockStatement;
+}
+
 and literal =
   | Integer of int
   | Boolean of bool
   | String  of string
   | Array   of expression list
   | Hash    of (expression * expression) list
+  | Macro   of macro
 [@@deriving show]
 
 and expression =

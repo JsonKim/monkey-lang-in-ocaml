@@ -125,6 +125,7 @@ and prefix_parse_fns p =
     | p, Some arr -> (p, Some (arr |> Ast.array_to_literal))
     | p, None -> (p, None))
   | Token.LBrace -> parse_hash p
+  | Token.Macro -> parse_macro p
   | _ ->
     ( parse_error
         ("parse error: prefix not found, cur_token: " ^ Token.show p.cur_token)
@@ -309,6 +310,21 @@ and parse_hash p =
   else
     let p = p |> next_token in
     parse_key_value [] p
+
+and parse_macro p =
+  match expect_token Token.LParen p with
+  | p, true -> (
+    match parse_function_parameters p with
+    | p, Some parameters -> (
+      match expect_token LBrace p with
+      | p, true -> (
+        match parse_block_statement p with
+        | p, Some body ->
+          (p, Some (Ast.Literal (Ast.Macro { parameters; body })))
+        | p, None -> (p, None))
+      | p, false -> (p, None))
+    | p, None -> (p, None))
+  | p, false -> (p, None)
 
 and parse_expression precedence p =
   let rec go p left =

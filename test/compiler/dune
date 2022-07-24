@@ -1,0 +1,3 @@
+(test
+ (name compiler)
+ (libraries monkey.lib fmt alcotest))

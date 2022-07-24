@@ -1,11 +1,17 @@
-type instructions = bytes
+type instructions = bytes [@@deriving show, eq]
 type byte = char
 
 module OpCode = struct
-  type t = OpConstant
+  exception Not_OpCode
+
+  type t = OpConstant [@@deriving show { with_path = false }]
 
   let to_int = function
     | OpConstant -> 0
+
+  let to_op = function
+    | 0 -> OpConstant
+    | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
   let compare a z = (a |> to_int) - (z |> to_int)
@@ -33,3 +39,41 @@ let make op operands =
     (List.combine operands operand_widths)
   |> ignore;
   instruction
+
+let read_uint_16 ins = Bytes.get_uint16_be ins 0
+
+let read_operands operands_width ins =
+  List.fold_left
+    (fun (operands, offset) width ->
+      let arg = ins |> read_uint_16 in
+      (Array.append operands [|arg|], offset + width))
+    (Array.make 0 0, 0)
+    operands_width
+
+let instruction_to_string ins =
+  let op = Bytes.get ins 0 |> int_of_char |> OpCode.to_op in
+  let def = definitions op in
+  let operands, read_bytes =
+    read_operands def (Bytes.sub ins 1 ((ins |> Bytes.length) - 1)) in
+  let prefix = Printf.sprintf "%04d" 0 in
+  let arguments =
+    match List.length def with
+    | 1 -> Printf.sprintf "%s %d" (op |> OpCode.show) operands.(0)
+    | _ -> "" in
+  (Printf.sprintf "%s %s" prefix arguments, 1 + read_bytes)
+
+let to_string ins =
+  let length_of_ins = ins |> Bytes.length in
+  let rec loop offset str =
+    if offset < length_of_ins then
+      let ins = Bytes.sub ins offset (length_of_ins - offset) in
+      let s, read_bytes = instruction_to_string ins in
+      let str =
+        match str with
+        | "" -> ""
+        | _ -> str ^ "\n" in
+      loop (offset + read_bytes) (str ^ s)
+    else
+      str in
+
+  loop 0 ""

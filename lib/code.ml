@@ -50,12 +50,12 @@ let read_operands operands_width ins =
     (Array.make 0 0, 0)
     operands_width
 
-let instruction_to_string ins =
+let instruction_to_string offset ins =
   let op = Bytes.get ins 0 |> int_of_char |> OpCode.to_op in
   let def = definitions op in
   let operands, read_bytes =
     read_operands def (Bytes.sub ins 1 ((ins |> Bytes.length) - 1)) in
-  let prefix = Printf.sprintf "%04d" 0 in
+  let prefix = Printf.sprintf "%04d" offset in
   let arguments =
     match List.length def with
     | 1 -> Printf.sprintf "%s %d" (op |> OpCode.show) operands.(0)
@@ -67,7 +67,7 @@ let to_string ins =
   let rec loop offset str =
     if offset < length_of_ins then
       let ins = Bytes.sub ins offset (length_of_ins - offset) in
-      let s, read_bytes = instruction_to_string ins in
+      let s, read_bytes = instruction_to_string offset ins in
       let str =
         match str with
         | "" -> ""

@@ -1,0 +1,3 @@
+(test
+ (name vm)
+ (libraries monkey.lib fmt alcotest))

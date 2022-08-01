@@ -58,4 +58,7 @@ module Compiler = struct
     | Ast.Program program -> compile_statements c program
     | Ast.Expression expression -> compile_expression c expression
     | _ -> raise Not_Implemented
+
+  let to_bytecode c =
+    { Bytecode.instructions = c.instructions; constants = c.constants }
 end

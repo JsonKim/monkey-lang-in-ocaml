@@ -44,9 +44,12 @@ module Compiler = struct
 
   and compile_expression c expression =
     match expression with
-    | Ast.Infix { left; right; _ } ->
+    | Ast.Infix { left; right; token } ->
       Option.bind (compile_expression c left) (fun (c, _) ->
-          compile_expression c right)
+          Option.bind (compile_expression c right) (fun (c, _) ->
+              match token with
+              | Token.Plus -> emit c OpAdd [] |> Option.some
+              | _ -> raise Not_Implemented))
     | Ast.Literal (Ast.Integer n) ->
       let integer = Object.Integer n in
       let c, pos = add_constant c integer in

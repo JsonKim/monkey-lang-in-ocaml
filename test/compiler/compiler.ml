@@ -17,7 +17,12 @@ let test_integer_arithmetic () =
     (Some
        {
          Compiler.Compiler.instructions =
-           concat_bytes [Code.make OpConstant [0]; Code.make OpConstant [1]];
+           concat_bytes
+             [
+               Code.make OpConstant [0];
+               Code.make OpConstant [1];
+               Code.make OpAdd [];
+             ];
          constants = [|Object.Integer 1; Object.Integer 2|];
        })
     ("1 + 2" |> parser |> compile empty |> Option.map fst)

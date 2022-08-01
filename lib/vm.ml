@@ -41,7 +41,8 @@ let run vm =
     | Code.OpCode.OpConstant ->
       let const_index = Bytes.get_uint16_be !vm.instructions (!ip + 1) in
       vm := push (Array.get !vm.constants const_index) !vm;
-      ip := !ip + 2);
+      ip := !ip + 2
+    | OpAdd -> ());
     ip := !ip + 1
   done;
   !vm

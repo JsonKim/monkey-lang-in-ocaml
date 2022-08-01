@@ -8,9 +8,12 @@ let concat_bytes l =
 let test_make () =
   let open Alcotest in
   let open Code.OpCode in
-  check bytes "same object"
-    ([|OpConstant |> to_int; 255; 254|] |> to_bytes)
-    (Code.make OpConstant [65534])
+  check (list bytes) "same object"
+    [
+      [|OpConstant |> to_int; 255; 254|] |> to_bytes;
+      [|OpAdd |> to_int|] |> to_bytes;
+    ]
+    [Code.make OpConstant [65534]; Code.make OpAdd []]
 
 type read_operand = {
   op : Code.OpCode.t;
@@ -33,14 +36,10 @@ let test_read_operands () =
 let test_instructions_to_string () =
   let open Alcotest in
   let instructinos =
-    [
-      Code.make OpConstant [1];
-      Code.make OpConstant [2];
-      Code.make OpConstant [65534];
-    ]
+    [Code.make OpAdd []; Code.make OpConstant [2]; Code.make OpConstant [65534]]
     |> concat_bytes in
   check string "same string"
-    "0000 OpConstant 1\n0000 OpConstant 2\n0000 OpConstant 65534"
+    "0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65534"
     (instructinos |> Code.to_string)
 
 let () =

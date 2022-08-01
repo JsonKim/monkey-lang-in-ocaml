@@ -4,13 +4,18 @@ type byte = char
 module OpCode = struct
   exception Not_OpCode
 
-  type t = OpConstant [@@deriving show { with_path = false }]
+  type t =
+    | OpConstant
+    | OpAdd
+  [@@deriving show { with_path = false }]
 
   let to_int = function
     | OpConstant -> 0
+    | OpAdd -> 1
 
   let to_op = function
     | 0 -> OpConstant
+    | 1 -> OpAdd
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -22,7 +27,8 @@ module Definitions = Map.Make (OpCode)
 let definitions =
   OpCode.(
     function
-    | OpConstant -> [2])
+    | OpConstant -> [2]
+    | OpAdd -> [])
 
 let make op operands =
   let operand_widths = definitions op in
@@ -58,6 +64,7 @@ let instruction_to_string offset ins =
   let prefix = Printf.sprintf "%04d" offset in
   let arguments =
     match List.length def with
+    | 0 -> op |> OpCode.show
     | 1 -> Printf.sprintf "%s %d" (op |> OpCode.show) operands.(0)
     | _ -> "" in
   (Printf.sprintf "%s %s" prefix arguments, 1 + read_bytes)

@@ -1,3 +1,5 @@
+exception Not_Converted
+
 let stack_size = 2048
 
 type t = {
@@ -24,6 +26,11 @@ let push o vm =
     Array.set vm.stack vm.sp o;
     { vm with sp = vm.sp + 1 })
 
+let pop vm =
+  let obj = Array.get !vm.stack (!vm.sp - 1) in
+  vm := { !vm with sp = !vm.sp - 1 };
+  obj
+
 let run vm =
   let ip = ref 0 in
   let vm = ref vm in
@@ -36,7 +43,16 @@ let run vm =
       let const_index = Bytes.get_uint16_be !vm.instructions (!ip + 1) in
       vm := push (Array.get !vm.constants const_index) !vm;
       ip := !ip + 2
-    | OpAdd -> ());
+    | OpAdd ->
+      let object_to_integer = function
+        | Object.Integer n -> n
+        | _ -> raise Not_Converted in
+      let right = pop vm in
+      let left = pop vm in
+      let leftValue = left |> object_to_integer in
+      let rightValue = right |> object_to_integer in
+      let result = leftValue + rightValue in
+      vm := push (Object.Integer result) !vm);
     ip := !ip + 1
   done;
   !vm

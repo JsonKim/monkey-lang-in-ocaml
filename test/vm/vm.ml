@@ -23,7 +23,7 @@ let test_integers () =
   let open Alcotest in
   check (list int) "same object"
     (["1"; "2"; "1 + 2"] |> List.map parse |> List.map object_to_integer)
-    [1; 2; (* FIXME *) 2]
+    [1; 2; 3]
 
 let () =
   let open Alcotest in

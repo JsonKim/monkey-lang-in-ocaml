@@ -28,7 +28,7 @@ let make op operands =
   let operand_widths = definitions op in
   let instruction_len = 1 + List.fold_left ( + ) 0 operand_widths in
   let instruction = Bytes.make instruction_len '\x00' in
-  Bytes.set instruction 0 (OpCode.OpConstant |> OpCode.to_byte);
+  Bytes.set instruction 0 (op |> OpCode.to_byte);
   List.fold_left
     (fun offset (operand, width) ->
       (match width with

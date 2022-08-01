@@ -1,11 +1,5 @@
 let stack_size = 2048
 
-let f a b c =
-  print_endline a;
-  if b then c else 0
-
-let f1 = 10 |> f "a" true
-
 type t = {
   constants : Object.t array;
   instructions : Code.instructions;

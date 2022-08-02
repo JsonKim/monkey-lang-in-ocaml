@@ -13,8 +13,10 @@ let test_integer_arithmetic () =
   let open Alcotest in
   let open Code.OpCode in
   let open Compiler.Compiler in
-  check (option compile_testable) "same object"
-    (Some
+  check
+    (result compile_testable string)
+    "same object"
+    (Ok
        {
          Compiler.Compiler.instructions =
            concat_bytes
@@ -25,7 +27,7 @@ let test_integer_arithmetic () =
              ];
          constants = [|Object.Integer 1; Object.Integer 2|];
        })
-    ("1 + 2" |> parser |> compile empty |> Option.map fst)
+    ("1 + 2" |> parser |> compile empty |> Result.map fst)
 
 let () =
   let open Alcotest in

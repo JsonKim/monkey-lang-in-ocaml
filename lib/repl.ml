@@ -29,10 +29,10 @@ let print env macro_env code =
     else
       let comp = Compiler.Compiler.empty in
       match Compiler.Compiler.compile comp stmt with
-      | None ->
-        print_endline "Woops! Compilation failed";
+      | Error message ->
+        print_endline message;
         env
-      | Some (comp, _) -> (
+      | Ok (comp, _) -> (
         let machine = comp |> Compiler.Compiler.to_bytecode |> Vm.make in
         let machine = machine |> Vm.run in
         match Vm.stack_top machine with

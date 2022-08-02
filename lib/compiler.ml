@@ -38,22 +38,24 @@ module Compiler = struct
   and compile_statements c stmts =
     List.fold_left
       (fun result stmt ->
-        Option.bind result (fun (c, _) -> compile_statement c stmt))
-      (Some (c, 0))
+        Result.bind result (fun (c, _) -> compile_statement c stmt))
+      (Ok (c, 0))
       stmts
 
   and compile_expression c expression =
     match expression with
     | Ast.Infix { left; right; token } ->
-      Option.bind (compile_expression c left) (fun (c, _) ->
-          Option.bind (compile_expression c right) (fun (c, _) ->
+      Result.bind (compile_expression c left) (fun (c, _) ->
+          Result.bind (compile_expression c right) (fun (c, _) ->
               match token with
-              | Token.Plus -> emit c OpAdd [] |> Option.some
-              | _ -> raise Not_Implemented))
+              | Token.Plus -> Ok (emit c OpAdd [])
+              | token ->
+                Error
+                  (Printf.sprintf "unknown operator %s" (token |> Token.show))))
     | Ast.Literal (Ast.Integer n) ->
       let integer = Object.Integer n in
       let c, pos = add_constant c integer in
-      Some (emit c Code.OpCode.OpConstant [pos])
+      Ok (emit c Code.OpCode.OpConstant [pos])
     | _ -> raise Not_Implemented
 
   let compile c node =

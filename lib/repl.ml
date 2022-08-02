@@ -27,16 +27,26 @@ let print env macro_env code =
       p.errors |> parse_list "\t" |> print_error;
       env)
     else
-      let obj, env = stmt |> Evaluator.eval env in
-      obj |> Object.show |> print_endline;
-      env in
+      let comp = Compiler.Compiler.empty in
+      match Compiler.Compiler.compile comp stmt with
+      | None ->
+        print_endline "Woops! Compilation failed";
+        env
+      | Some (comp, _) -> (
+        let machine = comp |> Compiler.Compiler.to_bytecode |> Vm.make in
+        let machine = machine |> Vm.run in
+        match Vm.stack_top machine with
+        | None ->
+          print_endline "Woops! Executing bytecode failed";
+          env
+        | Some obj ->
+          obj |> Object.show |> print_endline;
+          env) in
 
   let l = Lexer.make code in
   let p = Parser.make l in
   let p, stmt = Parser.parse_program p in
-  let macro_env, define_macros = Macro_expansion.define_macros macro_env stmt in
-  let expanded = Macro_expansion.expand_macros macro_env define_macros in
-  (go p env expanded, macro_env)
+  (go p env stmt, macro_env)
 
 let run () =
   let rec go env macro_env =

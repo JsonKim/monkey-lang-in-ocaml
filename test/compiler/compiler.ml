@@ -1,7 +1,13 @@
 open Monkey
 
 let compile_testable =
-  Alcotest.testable Compiler.Compiler.pp Compiler.Compiler.equal
+  let open Compiler.Compiler in
+  let pp_compiler fmt compiler =
+    Format.fprintf fmt "\n%s\n%s"
+      (show_constants compiler.constants)
+      (Code.to_string compiler.instructions) in
+
+  Alcotest.testable pp_compiler equal
 
 let concat_bytes l =
   List.fold_right (fun b acc -> Bytes.cat b acc) l Bytes.empty
@@ -24,6 +30,7 @@ let test_integer_arithmetic () =
                Code.make OpConstant [0];
                Code.make OpConstant [1];
                Code.make OpAdd [];
+               Code.make OpPop [];
              ];
          constants = [|Object.Integer 1; Object.Integer 2|];
        })

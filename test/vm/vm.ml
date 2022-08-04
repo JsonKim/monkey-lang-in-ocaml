@@ -22,8 +22,23 @@ let object_to_integer obj =
 let test_integers () =
   let open Alcotest in
   check (list int) "same object"
-    (["1"; "2"; "1 + 2"] |> List.map parse |> List.map object_to_integer)
-    [1; 2; 3]
+    ([
+       "1";
+       "2";
+       "1 + 2";
+       "1 - 2";
+       "1 * 2";
+       "4 / 2";
+       "50 / 2 * 2 + 10 - 5";
+       "5 + 5 + 5 + 5 - 10";
+       "2 * 2 * 2 * 2 * 2";
+       "5 * 2 + 10";
+       "5 + 2 * 10";
+       "5 * (2 + 10)";
+     ]
+    |> List.map parse
+    |> List.map object_to_integer)
+    [1; 2; 3; -1; 2; 2; 55; 10; 32; 20; 25; 60]
 
 let () =
   let open Alcotest in

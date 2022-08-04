@@ -31,6 +31,25 @@ let pop vm =
   vm := { !vm with sp = !vm.sp - 1 };
   obj
 
+let execute_binary_integer_operation vm op l r =
+  let open Code.OpCode in
+  let result =
+    match op with
+    | OpAdd -> l + r
+    | OpSub -> l - r
+    | OpMul -> l * r
+    | OpDiv -> l / r
+    | _ -> raise Not_Converted in
+  vm := push (Object.Integer result) !vm
+
+let execute_binary_operation vm op =
+  let right = pop vm in
+  let left = pop vm in
+  match (left, right) with
+  | Object.Integer l, Object.Integer r ->
+    execute_binary_integer_operation vm op l r
+  | _ -> raise Not_Converted
+
 let run vm =
   let ip = ref 0 in
   let vm = ref vm in
@@ -43,19 +62,11 @@ let run vm =
       let const_index = Bytes.get_uint16_be !vm.instructions (!ip + 1) in
       vm := push (Array.get !vm.constants const_index) !vm;
       ip := !ip + 2
-    | OpAdd ->
-      let object_to_integer = function
-        | Object.Integer n -> n
-        | _ -> raise Not_Converted in
-      let right = pop vm in
-      let left = pop vm in
-      let leftValue = left |> object_to_integer in
-      let rightValue = right |> object_to_integer in
-      let result = leftValue + rightValue in
-      vm := push (Object.Integer result) !vm
-    | OpSub -> (* FIXME *) ()
-    | OpMul -> (* FIXME *) ()
-    | OpDiv -> (* FIXME *) ()
+    | OpAdd
+    | OpSub
+    | OpMul
+    | OpDiv ->
+      execute_binary_operation vm op
     | OpPop -> pop vm |> ignore);
     ip := !ip + 1
   done;

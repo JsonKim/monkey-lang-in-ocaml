@@ -52,7 +52,8 @@ let run vm =
       let leftValue = left |> object_to_integer in
       let rightValue = right |> object_to_integer in
       let result = leftValue + rightValue in
-      vm := push (Object.Integer result) !vm);
+      vm := push (Object.Integer result) !vm
+    | OpPop -> (* FIXME *) ());
     ip := !ip + 1
   done;
   !vm

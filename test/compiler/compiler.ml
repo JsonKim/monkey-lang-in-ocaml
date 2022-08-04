@@ -1,11 +1,43 @@
 open Monkey
 
+module Fmt = struct
+  let surround s1 s2 pp_v ppf v =
+    Format.(
+      pp_print_string ppf s1;
+      pp_v ppf v;
+      pp_print_string ppf s2)
+
+  let box ?(indent = 0) pp_v ppf v =
+    Format.(
+      pp_open_box ppf indent;
+      pp_v ppf v;
+      pp_close_box ppf ())
+
+  let oxford_brackets pp_v = box ~indent:2 (surround "[|" "|]" pp_v)
+
+  let semi ppf _ =
+    let sp ppf _ = Format.pp_print_space ppf () in
+    Format.pp_print_string ppf ";";
+    sp ppf ()
+
+  let iter ~sep:pp_sep iter pp_elt ppf v =
+    let is_first = ref true in
+    let pp_elt v =
+      if !is_first then is_first := false else pp_sep ppf ();
+      pp_elt ppf v in
+    iter pp_elt v
+
+  let array ~sep pp_elt = iter ~sep Array.iter pp_elt
+  let array pp_elt = oxford_brackets (array ~sep:semi (box pp_elt))
+end
+
 let compile_testable =
   let open Compiler.Compiler in
   let pp_compiler fmt compiler =
-    Format.fprintf fmt "\n%s\n%s"
-      (show_constants compiler.constants)
-      (Code.to_string compiler.instructions) in
+    Format.pp_print_string fmt "\n";
+    (Fmt.array Object.pp) fmt compiler.constants;
+    Format.pp_print_string fmt "\n";
+    Format.fprintf fmt "%s" (Code.to_string compiler.instructions) in
 
   Alcotest.testable pp_compiler equal
 

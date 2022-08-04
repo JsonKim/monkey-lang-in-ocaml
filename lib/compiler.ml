@@ -51,6 +51,9 @@ module Compiler = struct
           Result.bind (compile_expression c right) (fun (c, _) ->
               match token with
               | Token.Plus -> Ok (emit c OpAdd [])
+              | Token.Minus -> Ok (emit c OpSub [])
+              | Token.Asterisk -> Ok (emit c OpMul [])
+              | Token.Slash -> Ok (emit c OpDiv [])
               | token ->
                 Error
                   (Printf.sprintf "unknown operator %s" (token |> Token.show))))

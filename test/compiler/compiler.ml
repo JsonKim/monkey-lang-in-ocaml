@@ -80,8 +80,44 @@ let test_integer_arithmetic () =
                 ];
             constants = [|Object.Integer 1; Object.Integer 2|];
           };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpSub [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1; Object.Integer 2|];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpMul [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1; Object.Integer 2|];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpDiv [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 2; Object.Integer 1|];
+          };
       ]
-    (["1 + 2"; "1; 2"]
+    (["1 + 2"; "1; 2"; "1 - 2"; "1 * 2"; "2 / 1"]
     |> List.map (fun code -> code |> parser |> compile empty |> Result.map fst)
     )
 

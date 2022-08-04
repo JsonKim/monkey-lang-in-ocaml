@@ -32,7 +32,9 @@ module Compiler = struct
 
   let rec compile_statement c stmt =
     match stmt with
-    | Ast.ExpressionStatement { expression } -> compile_expression c expression
+    | Ast.ExpressionStatement { expression } ->
+      compile_expression c expression
+      |> Result.map (fun (c, _) -> emit c OpPop [])
     | _ -> raise Not_Implemented
 
   and compile_statements c stmts =
@@ -62,6 +64,7 @@ module Compiler = struct
     match node with
     | Ast.Program program -> compile_statements c program
     | Ast.Expression expression -> compile_expression c expression
+    | Ast.Statement statement -> compile_statement c statement
     | _ -> raise Not_Implemented
 
   let to_bytecode c =

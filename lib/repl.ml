@@ -35,7 +35,7 @@ let print env macro_env code =
       | Ok (comp, _) -> (
         let machine = comp |> Compiler.Compiler.to_bytecode |> Vm.make in
         let machine = machine |> Vm.run in
-        match Vm.stack_top machine with
+        match Vm.last_popped_stack_elem machine with
         | None ->
           print_endline "Woops! Executing bytecode failed";
           env

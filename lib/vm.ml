@@ -15,8 +15,8 @@ let make bytecode =
   let stack = Array.make stack_size Object.Null in
   { instructions; constants; stack; sp = 0 }
 
-let stack_top vm =
-  try Some (Array.get vm.stack (vm.sp - 1)) with
+let last_popped_stack_elem vm =
+  try Some (Array.get vm.stack vm.sp) with
   | _ -> None
 
 let push o vm =
@@ -53,7 +53,7 @@ let run vm =
       let rightValue = right |> object_to_integer in
       let result = leftValue + rightValue in
       vm := push (Object.Integer result) !vm
-    | OpPop -> (* FIXME *) ());
+    | OpPop -> pop vm |> ignore);
     ip := !ip + 1
   done;
   !vm

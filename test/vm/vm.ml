@@ -8,7 +8,7 @@ let parse input =
   match Compiler.Compiler.compile compiler ast with
   | Ok (c, _) -> (
     let bytecode = Compiler.Compiler.to_bytecode c in
-    let obj = bytecode |> Vm.make |> Vm.run |> Vm.stack_top in
+    let obj = bytecode |> Vm.make |> Vm.run |> Vm.last_popped_stack_elem in
     match obj with
     | Some obj -> obj
     | None -> raise Compile_Failed)

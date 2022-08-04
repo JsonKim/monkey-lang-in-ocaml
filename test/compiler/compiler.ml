@@ -52,21 +52,38 @@ let test_integer_arithmetic () =
   let open Code.OpCode in
   let open Compiler.Compiler in
   check
-    (result compile_testable string)
+    (list (result compile_testable string))
     "same object"
-    (Ok
-       {
-         Compiler.Compiler.instructions =
-           concat_bytes
-             [
-               Code.make OpConstant [0];
-               Code.make OpConstant [1];
-               Code.make OpAdd [];
-               Code.make OpPop [];
-             ];
-         constants = [|Object.Integer 1; Object.Integer 2|];
-       })
-    ("1 + 2" |> parser |> compile empty |> Result.map fst)
+    Compiler.Compiler.
+      [
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpAdd [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1; Object.Integer 2|];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpPop [];
+                  Code.make OpConstant [1];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1; Object.Integer 2|];
+          };
+      ]
+    (["1 + 2"; "1; 2"]
+    |> List.map (fun code -> code |> parser |> compile empty |> Result.map fst)
+    )
 
 let () =
   let open Alcotest in

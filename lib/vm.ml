@@ -62,12 +62,15 @@ let run vm =
       let const_index = Bytes.get_uint16_be !vm.instructions (!ip + 1) in
       vm := push (Array.get !vm.constants const_index) !vm;
       ip := !ip + 2
+    | OpPop -> pop vm |> ignore
     | OpAdd
     | OpSub
     | OpMul
     | OpDiv ->
       execute_binary_operation vm op
-    | OpPop -> pop vm |> ignore);
+    | OpTrue
+    | OpFalse ->
+      (* FIXME *) ());
     ip := !ip + 1
   done;
   !vm

@@ -121,7 +121,38 @@ let test_integer_arithmetic () =
     |> List.map (fun code -> code |> parser |> compile empty |> Result.map fst)
     )
 
+let test_boolean_expressions () =
+  let open Alcotest in
+  let open Code.OpCode in
+  let open Compiler.Compiler in
+  check
+    (list (result compile_testable string))
+    "same object"
+    Compiler.Compiler.
+      [
+        Ok
+          {
+            instructions =
+              concat_bytes [Code.make OpTrue []; Code.make OpPop []];
+            constants = [||];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes [Code.make OpFalse []; Code.make OpPop []];
+            constants = [||];
+          };
+      ]
+    (["true"; "false"]
+    |> List.map (fun code -> code |> parser |> compile empty |> Result.map fst)
+    )
+
 let () =
   let open Alcotest in
   run "Parser"
-    [("make test", [test_case "make test" `Slow test_integer_arithmetic])]
+    [
+      ( "integer arithmetic test",
+        [test_case "integer arithmetic test" `Slow test_integer_arithmetic] );
+      ( "boolean expressions test",
+        [test_case "boolean expression test" `Slow test_boolean_expressions] );
+    ]

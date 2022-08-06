@@ -11,6 +11,8 @@ module OpCode = struct
     | OpSub
     | OpMul
     | OpDiv
+    | OpTrue
+    | OpFalse
   [@@deriving show { with_path = false }]
 
   let to_int = function
@@ -20,6 +22,8 @@ module OpCode = struct
     | OpSub -> 3
     | OpMul -> 4
     | OpDiv -> 5
+    | OpTrue -> 6
+    | OpFalse -> 7
 
   let to_op = function
     | 0 -> OpConstant
@@ -28,6 +32,8 @@ module OpCode = struct
     | 3 -> OpSub
     | 4 -> OpMul
     | 5 -> OpDiv
+    | 6 -> OpTrue
+    | 7 -> OpFalse
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -44,7 +50,9 @@ let definitions =
     | OpAdd -> []
     | OpSub -> []
     | OpMul -> []
-    | OpDiv -> [])
+    | OpDiv -> []
+    | OpTrue -> []
+    | OpFalse -> [])
 
 let make op operands =
   let operand_widths = definitions op in

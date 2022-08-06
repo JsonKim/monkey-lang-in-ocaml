@@ -116,8 +116,19 @@ let test_integer_arithmetic () =
                 ];
             constants = [|Object.Integer 2; Object.Integer 1|];
           };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpMinus [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1|];
+          };
       ]
-    (["1 + 2"; "1; 2"; "1 - 2"; "1 * 2"; "2 / 1"]
+    (["1 + 2"; "1; 2"; "1 - 2"; "1 * 2"; "2 / 1"; "-1"]
     |> List.map (fun code -> code |> parser |> compile empty |> Result.map fst)
     )
 
@@ -214,6 +225,13 @@ let test_boolean_expressions () =
                 ];
             constants = [||];
           };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [Code.make OpTrue []; Code.make OpBang []; Code.make OpPop []];
+            constants = [||];
+          };
       ]
     ([
        "true";
@@ -224,6 +242,7 @@ let test_boolean_expressions () =
        "1 != 2";
        "true == false";
        "true != false";
+       "!true";
      ]
     |> List.map (fun code -> code |> parser |> compile empty |> Result.map fst)
     )

@@ -46,6 +46,13 @@ module Compiler = struct
 
   and compile_expression c expression =
     match expression with
+    | Ast.Prefix { token; right } ->
+      Result.bind (compile_expression c right) (fun (c, _) ->
+          match token with
+          | Token.Minus -> Ok (emit c OpMinus [])
+          | Token.Bang -> Ok (emit c OpBang [])
+          | _ ->
+            Error (Printf.sprintf "unknown operator %s" (token |> Token.show)))
     | Ast.Infix { left; right; token } ->
       if token = Token.LT then
         Result.bind (compile_expression c right) (fun (c, _) ->

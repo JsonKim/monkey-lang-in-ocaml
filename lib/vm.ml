@@ -3,6 +3,7 @@ exception Not_Converted
 let stack_size = 2048
 let obj_true = Object.Boolean true
 let obj_false = Object.Boolean false
+let native_bool_to_boolean_object b = if b then obj_true else obj_false
 
 type t = {
   constants : Object.t array;
@@ -52,6 +53,30 @@ let execute_binary_operation vm op =
     execute_binary_integer_operation vm op l r
   | _ -> raise Not_Converted
 
+let execute_integer_comparison vm op l r =
+  let open Code.OpCode in
+  let result =
+    match op with
+    | OpEqual -> l = r
+    | OpNotEqual -> l != r
+    | OpGreaterThan -> l > r
+    | _ -> raise Not_Converted in
+  vm := push (result |> native_bool_to_boolean_object) !vm
+
+let execute_comparison vm op =
+  let right = pop vm in
+  let left = pop vm in
+  match (left, right) with
+  | Object.Integer l, Object.Integer r -> execute_integer_comparison vm op l r
+  | Object.Boolean l, Object.Boolean r ->
+    let result =
+      match op with
+      | OpEqual -> l = r
+      | OpNotEqual -> l != r
+      | _ -> raise Not_Converted in
+    vm := push (result |> native_bool_to_boolean_object) !vm
+  | _ -> raise Not_Converted
+
 let run vm =
   let ip = ref 0 in
   let vm = ref vm in
@@ -75,7 +100,7 @@ let run vm =
     | OpEqual
     | OpNotEqual
     | OpGreaterThan ->
-      (* FIXME *) ());
+      execute_comparison vm op);
     ip := !ip + 1
   done;
   !vm

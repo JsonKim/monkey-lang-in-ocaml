@@ -48,8 +48,50 @@ let test_integers () =
 let test_boolean_expressions () =
   let open Alcotest in
   check (list bool) "same object"
-    (["true"; "false"] |> List.map parse |> List.map object_to_boolean)
-    [true; false]
+    ([
+       "true";
+       "false";
+       "1 < 2";
+       "1 > 2";
+       "1 < 1";
+       "1 > 1";
+       "1 == 1";
+       "1 != 1";
+       "1 == 2";
+       "1 != 2";
+       "true == true";
+       "false == false";
+       "true == false";
+       "true != false";
+       "false != true";
+       "(1 < 2) == true";
+       "(1 < 2) == false";
+       "(1 > 2) == true";
+       "(1 > 2) == false";
+     ]
+    |> List.map parse
+    |> List.map object_to_boolean)
+    [
+      true;
+      false;
+      true;
+      false;
+      false;
+      false;
+      true;
+      false;
+      false;
+      true;
+      true;
+      true;
+      false;
+      true;
+      true;
+      true;
+      false;
+      false;
+      true;
+    ]
 
 let () =
   let open Alcotest in

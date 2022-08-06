@@ -142,8 +142,89 @@ let test_boolean_expressions () =
               concat_bytes [Code.make OpFalse []; Code.make OpPop []];
             constants = [||];
           };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpGreaterThan [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1; Object.Integer 2|];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpGreaterThan [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 2; Object.Integer 1|];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpEqual [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1; Object.Integer 2|];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpConstant [0];
+                  Code.make OpConstant [1];
+                  Code.make OpNotEqual [];
+                  Code.make OpPop [];
+                ];
+            constants = [|Object.Integer 1; Object.Integer 2|];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpTrue [];
+                  Code.make OpFalse [];
+                  Code.make OpEqual [];
+                  Code.make OpPop [];
+                ];
+            constants = [||];
+          };
+        Ok
+          {
+            instructions =
+              concat_bytes
+                [
+                  Code.make OpTrue [];
+                  Code.make OpFalse [];
+                  Code.make OpNotEqual [];
+                  Code.make OpPop [];
+                ];
+            constants = [||];
+          };
       ]
-    (["true"; "false"]
+    ([
+       "true";
+       "false";
+       "1 > 2";
+       "1 < 2";
+       "1 == 2";
+       "1 != 2";
+       "true == false";
+       "true != false";
+     ]
     |> List.map (fun code -> code |> parser |> compile empty |> Result.map fst)
     )
 

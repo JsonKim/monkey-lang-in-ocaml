@@ -47,16 +47,24 @@ module Compiler = struct
   and compile_expression c expression =
     match expression with
     | Ast.Infix { left; right; token } ->
-      Result.bind (compile_expression c left) (fun (c, _) ->
-          Result.bind (compile_expression c right) (fun (c, _) ->
-              match token with
-              | Token.Plus -> Ok (emit c OpAdd [])
-              | Token.Minus -> Ok (emit c OpSub [])
-              | Token.Asterisk -> Ok (emit c OpMul [])
-              | Token.Slash -> Ok (emit c OpDiv [])
-              | token ->
-                Error
-                  (Printf.sprintf "unknown operator %s" (token |> Token.show))))
+      if token = Token.LT then
+        Result.bind (compile_expression c right) (fun (c, _) ->
+            Result.bind (compile_expression c left) (fun (c, _) ->
+                Ok (emit c OpGreaterThan [])))
+      else
+        Result.bind (compile_expression c left) (fun (c, _) ->
+            Result.bind (compile_expression c right) (fun (c, _) ->
+                match token with
+                | Token.Plus -> Ok (emit c OpAdd [])
+                | Token.Minus -> Ok (emit c OpSub [])
+                | Token.Asterisk -> Ok (emit c OpMul [])
+                | Token.Slash -> Ok (emit c OpDiv [])
+                | Token.Eq -> Ok (emit c OpEqual [])
+                | Token.Not_Eq -> Ok (emit c OpNotEqual [])
+                | Token.GT -> Ok (emit c OpGreaterThan [])
+                | token ->
+                  Error
+                    (Printf.sprintf "unknown operator %s" (token |> Token.show))))
     | Ast.Literal (Ast.Integer n) ->
       let integer = Object.Integer n in
       let c, pos = add_constant c integer in

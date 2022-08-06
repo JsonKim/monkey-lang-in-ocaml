@@ -40,10 +40,14 @@ let test_integers () =
        "5 * 2 + 10";
        "5 + 2 * 10";
        "5 * (2 + 10)";
+       "-5";
+       "-10";
+       "-50 + 100 + -50";
+       "(5 + 10 * 2 + 15 / 3) * 2 + -10";
      ]
     |> List.map parse
     |> List.map object_to_integer)
-    [1; 2; 3; -1; 2; 2; 55; 10; 32; 20; 25; 60]
+    [1; 2; 3; -1; 2; 2; 55; 10; 32; 20; 25; 60; -5; -10; 0; 50]
 
 let test_boolean_expressions () =
   let open Alcotest in
@@ -68,6 +72,12 @@ let test_boolean_expressions () =
        "(1 < 2) == false";
        "(1 > 2) == true";
        "(1 > 2) == false";
+       "!true";
+       "!false";
+       "!5";
+       "!!true";
+       "!!false";
+       "!!5";
      ]
     |> List.map parse
     |> List.map object_to_boolean)
@@ -89,6 +99,12 @@ let test_boolean_expressions () =
       true;
       true;
       false;
+      false;
+      true;
+      false;
+      true;
+      false;
+      true;
       false;
       true;
     ]

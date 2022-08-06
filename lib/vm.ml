@@ -77,6 +77,19 @@ let execute_comparison vm op =
     vm := push (result |> native_bool_to_boolean_object) !vm
   | _ -> raise Not_Converted
 
+let execute_minus_operator vm =
+  let operand = pop vm in
+  match operand with
+  | Object.Integer n -> vm := push (Object.Integer (-n)) !vm
+  | _ -> raise Not_Converted
+
+let execute_bang_operator vm =
+  let operand = pop vm in
+  match operand with
+  | Object.Boolean true -> vm := push obj_false !vm
+  | Object.Boolean false -> vm := push obj_true !vm
+  | _ -> vm := push obj_false !vm
+
 let run vm =
   let ip = ref 0 in
   let vm = ref vm in
@@ -101,9 +114,8 @@ let run vm =
     | OpNotEqual
     | OpGreaterThan ->
       execute_comparison vm op
-    | OpMinus
-    | OpBang ->
-      (* FIXME *) ());
+    | OpMinus -> execute_minus_operator vm
+    | OpBang -> execute_bang_operator vm);
     ip := !ip + 1
   done;
   !vm

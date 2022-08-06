@@ -1,6 +1,8 @@
 exception Not_Converted
 
 let stack_size = 2048
+let obj_true = Object.Boolean true
+let obj_false = Object.Boolean false
 
 type t = {
   constants : Object.t array;
@@ -68,9 +70,8 @@ let run vm =
     | OpMul
     | OpDiv ->
       execute_binary_operation vm op
-    | OpTrue
-    | OpFalse ->
-      (* FIXME *) ());
+    | OpTrue -> vm := push obj_true !vm
+    | OpFalse -> vm := push obj_false !vm);
     ip := !ip + 1
   done;
   !vm

@@ -19,6 +19,11 @@ let object_to_integer obj =
   | Object.Integer n -> n
   | _ -> raise Not_found
 
+let object_to_boolean obj =
+  match obj with
+  | Object.Boolean b -> b
+  | _ -> raise Not_found
+
 let test_integers () =
   let open Alcotest in
   check (list int) "same object"
@@ -40,7 +45,17 @@ let test_integers () =
     |> List.map object_to_integer)
     [1; 2; 3; -1; 2; 2; 55; 10; 32; 20; 25; 60]
 
+let test_boolean_expressions () =
+  let open Alcotest in
+  check (list bool) "same object"
+    (["true"; "false"] |> List.map parse |> List.map object_to_boolean)
+    [true; false]
+
 let () =
   let open Alcotest in
   run "Code"
-    [("integers test", [test_case "integers test" `Slow test_integers])]
+    [
+      ("integers test", [test_case "integers test" `Slow test_integers]);
+      ( "boolean expressions test",
+        [test_case "boolean expressions test" `Slow test_boolean_expressions] );
+    ]

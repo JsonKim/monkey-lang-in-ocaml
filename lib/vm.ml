@@ -100,7 +100,10 @@ let run vm =
     | OpEqual
     | OpNotEqual
     | OpGreaterThan ->
-      execute_comparison vm op);
+      execute_comparison vm op
+    | OpMinus
+    | OpBang ->
+      (* FIXME *) ());
     ip := !ip + 1
   done;
   !vm

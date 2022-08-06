@@ -16,6 +16,8 @@ module OpCode = struct
     | OpEqual
     | OpNotEqual
     | OpGreaterThan
+    | OpMinus
+    | OpBang
   [@@deriving show { with_path = false }]
 
   let to_int = function
@@ -30,6 +32,8 @@ module OpCode = struct
     | OpEqual -> 8
     | OpNotEqual -> 9
     | OpGreaterThan -> 10
+    | OpMinus -> 11
+    | OpBang -> 12
 
   let to_op = function
     | 0 -> OpConstant
@@ -43,6 +47,8 @@ module OpCode = struct
     | 8 -> OpEqual
     | 9 -> OpNotEqual
     | 10 -> OpGreaterThan
+    | 11 -> OpMinus
+    | 12 -> OpBang
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -64,7 +70,9 @@ let definitions =
     | OpFalse -> []
     | OpEqual -> []
     | OpNotEqual -> []
-    | OpGreaterThan -> [])
+    | OpGreaterThan -> []
+    | OpMinus -> []
+    | OpBang -> [])
 
 let make op operands =
   let operand_widths = definitions op in

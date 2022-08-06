@@ -71,7 +71,11 @@ let run vm =
     | OpDiv ->
       execute_binary_operation vm op
     | OpTrue -> vm := push obj_true !vm
-    | OpFalse -> vm := push obj_false !vm);
+    | OpFalse -> vm := push obj_false !vm
+    | OpEqual
+    | OpNotEqual
+    | OpGreaterThan ->
+      (* FIXME *) ());
     ip := !ip + 1
   done;
   !vm

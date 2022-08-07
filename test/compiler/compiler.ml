@@ -277,8 +277,25 @@ let test_conditionals () =
               ];
           constants = [|Object.Integer 10; Object.Integer 3333|];
         };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                Code.make OpTrue [];
+                Code.make OpJumpNotTruthy [10];
+                Code.make OpConstant [0];
+                Code.make OpJump [13];
+                Code.make OpConstant [1];
+                Code.make OpPop [];
+                Code.make OpConstant [2];
+                Code.make OpPop [];
+              ];
+          constants =
+            [|Object.Integer 10; Object.Integer 20; Object.Integer 3333|];
+        };
     ]
-    (["if (true) { 10 }; 3333"]
+    (["if (true) { 10 }; 3333"; "if (true) { 10 } else { 20 }; 3333;"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
 let () =

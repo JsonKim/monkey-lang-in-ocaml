@@ -7,14 +7,28 @@ module Bytecode = struct
   }
 end
 
+module EmittedInstruction = struct
+  type t = {
+    op_code : Code.OpCode.t;
+    position : int;
+  }
+end
+
 module Compiler = struct
   type t = {
     instructions : Code.instructions;
     constants : Object.t array;
+    last_instruction : EmittedInstruction.t option;
+    previous_instruction : EmittedInstruction.t option;
   }
-  [@@deriving show, eq]
 
-  let empty = { instructions = Bytes.empty; constants = [||] }
+  let empty =
+    {
+      instructions = Bytes.empty;
+      constants = [||];
+      last_instruction = None;
+      previous_instruction = None;
+    }
 
   let add_constant c obj =
     let pos = Array.length c.constants in
@@ -26,9 +40,29 @@ module Compiler = struct
     let instructions = Bytes.cat c.instructions ins in
     ({ c with instructions }, pos)
 
+  let set_last_instruction op_code position c =
+    let previous_instruction = c.last_instruction in
+    let last_instruction = Some { EmittedInstruction.op_code; position } in
+    { c with previous_instruction; last_instruction }
+
+  let last_instruction_is_pop c =
+    c.last_instruction
+    |> Option.map (function
+         | { EmittedInstruction.op_code = Code.OpCode.OpPop; _ } -> true
+         | _ -> false)
+    |> Option.value ~default:false
+
+  let remove_last_pop c =
+    let instructions =
+      Bytes.sub c.instructions 0 (Bytes.length c.instructions - 1) in
+    let last_instruction = c.previous_instruction in
+    { c with instructions; last_instruction }
+
   let emit c op operands =
     let ins = Code.make op operands in
-    add_instruction c ins
+    let c, pos = add_instruction c ins in
+    let c = set_last_instruction op pos c in
+    (c, pos)
 
   let rec compile_statement c stmt =
     match stmt with
@@ -78,6 +112,13 @@ module Compiler = struct
       Ok (emit c Code.OpCode.OpConstant [pos])
     | Ast.Literal (Ast.Boolean true) -> Ok (emit c Code.OpCode.OpTrue [])
     | Ast.Literal (Ast.Boolean false) -> Ok (emit c Code.OpCode.OpFalse [])
+    | Ast.If { condition; consequence; _ } ->
+      Result.bind (compile_expression c condition) (fun (c, _) ->
+          let c, _ = emit c OpJumpNotTruthy [9999] in
+          Result.bind (compile_statements c consequence) (fun (c, pos) ->
+              let c =
+                if last_instruction_is_pop c then remove_last_pop c else c in
+              Ok (c, pos)))
     | _ -> raise Not_Implemented
 
   let compile c node =

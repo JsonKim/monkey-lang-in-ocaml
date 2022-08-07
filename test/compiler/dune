@@ -1,3 +1,5 @@
 (test
  (name compiler)
- (libraries monkey.lib fmt alcotest))
+ (libraries monkey.lib fmt alcotest)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))

@@ -58,6 +58,16 @@ module Compiler = struct
     let last_instruction = c.previous_instruction in
     { c with instructions; last_instruction }
 
+  let replace_instruction c pos new_instruction =
+    Bytes.blit new_instruction 0 c.instructions pos
+      (Bytes.length new_instruction)
+
+  let change_operands c op_pos operand =
+    let op =
+      Bytes.get c.instructions op_pos |> int_of_char |> Code.OpCode.to_op in
+    let new_instruction = Code.make op operand in
+    replace_instruction c op_pos new_instruction
+
   let emit c op operands =
     let ins = Code.make op operands in
     let c, pos = add_instruction c ins in
@@ -114,10 +124,12 @@ module Compiler = struct
     | Ast.Literal (Ast.Boolean false) -> Ok (emit c Code.OpCode.OpFalse [])
     | Ast.If { condition; consequence; _ } ->
       Result.bind (compile_expression c condition) (fun (c, _) ->
-          let c, _ = emit c OpJumpNotTruthy [9999] in
+          let c, jump_not_truthy_pos = emit c OpJumpNotTruthy [9999] in
           Result.bind (compile_statements c consequence) (fun (c, pos) ->
               let c =
                 if last_instruction_is_pop c then remove_last_pop c else c in
+              let after_consequense_pos = Bytes.length c.instructions in
+              change_operands c jump_not_truthy_pos [after_consequense_pos];
               Ok (c, pos)))
     | _ -> raise Not_Implemented
 

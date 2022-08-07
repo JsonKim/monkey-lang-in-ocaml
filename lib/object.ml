@@ -17,6 +17,7 @@ type t =
   | Quote    of Ast.expression
   | Macro    of macro
   | Error    of string
+[@@deriving show, eq]
 
 and macro = {
   parameters : Ast.identifier list;

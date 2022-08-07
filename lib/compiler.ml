@@ -125,26 +125,32 @@ module Compiler = struct
     | Ast.If { condition; consequence; alternative } ->
       Result.bind (compile_expression c condition) (fun (c, _) ->
           let c, jump_not_truthy_pos = emit c OpJumpNotTruthy [9999] in
-          Result.bind (compile_statements c consequence) (fun (c, pos) ->
+          Result.bind (compile_statements c consequence) (fun (c, _) ->
               let c =
                 if last_instruction_is_pop c then remove_last_pop c else c in
-              if alternative |> Option.is_none then (
-                let after_consequense_pos = Bytes.length c.instructions in
-                change_operands c jump_not_truthy_pos [after_consequense_pos];
-                Ok (c, pos))
-              else
-                let c, jump_pos = emit c OpJump [9999] in
-                let after_consequense_pos = Bytes.length c.instructions in
-                change_operands c jump_not_truthy_pos [after_consequense_pos];
-                Result.bind
-                  (compile_statements c (Option.get alternative))
-                  (fun (c, pos) ->
-                    let c =
-                      if last_instruction_is_pop c then remove_last_pop c else c
-                    in
-                    let after_alternative_pos = Bytes.length c.instructions in
-                    change_operands c jump_pos [after_alternative_pos];
-                    Ok (c, pos))))
+
+              let c, jump_pos = emit c OpJump [9999] in
+              let after_consequense_pos = Bytes.length c.instructions in
+              change_operands c jump_not_truthy_pos [after_consequense_pos];
+
+              let alternative =
+                if alternative |> Option.is_none then
+                  Ok (emit c OpNull [])
+                else
+                  Result.bind
+                    (compile_statements c (Option.get alternative))
+                    (fun (c, pos) ->
+                      let c =
+                        if last_instruction_is_pop c then
+                          remove_last_pop c
+                        else
+                          c in
+                      Ok (c, pos)) in
+
+              Result.bind alternative (fun (c, pos) ->
+                  let after_alternative_pos = Bytes.length c.instructions in
+                  change_operands c jump_pos [after_alternative_pos];
+                  Ok (c, pos))))
     | _ -> raise Not_Implemented
 
   let compile c node =

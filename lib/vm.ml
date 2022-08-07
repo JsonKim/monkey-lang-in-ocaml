@@ -7,6 +7,7 @@ let native_bool_to_boolean_object b = if b then obj_true else obj_false
 
 let is_truthy = function
   | Object.Boolean b -> b
+  | Object.Null -> false
   | _ -> true
 
 type t = {
@@ -92,6 +93,7 @@ let execute_bang_operator vm =
   match operand with
   | Object.Boolean true -> vm := push obj_false !vm
   | Object.Boolean false -> vm := push obj_true !vm
+  | Object.Null -> vm := push obj_true !vm
   | _ -> vm := push obj_false !vm
 
 let run vm =
@@ -131,7 +133,8 @@ let run vm =
     | OpJump ->
       let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
       let pos = Code.read_uint_16 operand in
-      ip := pos - 1);
+      ip := pos - 1
+    | OpNull -> vm := push Object.Null !vm);
     ip := !ip + 1
   done;
   !vm

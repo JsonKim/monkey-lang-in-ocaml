@@ -2,6 +2,8 @@ open Monkey
 
 exception Compile_Failed
 
+let object_testable = Alcotest.testable Object.pp Object.equal
+
 let parse input =
   let compiler = Compiler.Compiler.empty in
   let ast = input |> Lexer.make |> Parser.make |> Parser.parse_program |> snd in
@@ -78,6 +80,7 @@ let test_boolean_expressions () =
        "!!true";
        "!!false";
        "!!5";
+       "!(if (false) { 5; })";
      ]
     |> List.map parse
     |> List.map object_to_boolean)
@@ -107,11 +110,12 @@ let test_boolean_expressions () =
       true;
       false;
       true;
+      true;
     ]
 
 let test_conditionals () =
   let open Alcotest in
-  check (list int) "same object"
+  check (list object_testable) "same object"
     ([
        "if (true) { 10 }";
        "if (true) { 10 } else { 20 }";
@@ -120,10 +124,23 @@ let test_conditionals () =
        "if (1 < 2) { 10 }";
        "if (1 < 2) { 10 } else { 20 }";
        "if (1 > 2) { 10 } else { 20 }";
+       "if (1 > 2) { 10 }";
+       "if (false) { 10 }";
+       "if ((if (false) { 10 })) { 10 } else { 20 }";
      ]
-    |> List.map parse
-    |> List.map object_to_integer)
-    [10; 10; 20; 10; 10; 10; 20]
+    |> List.map parse)
+    [
+      Object.Integer 10;
+      Object.Integer 10;
+      Object.Integer 20;
+      Object.Integer 10;
+      Object.Integer 10;
+      Object.Integer 10;
+      Object.Integer 20;
+      Object.Null;
+      Object.Null;
+      Object.Integer 20;
+    ]
 
 let () =
   let open Alcotest in

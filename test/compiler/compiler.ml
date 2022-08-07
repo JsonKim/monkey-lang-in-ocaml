@@ -269,8 +269,10 @@ let test_conditionals () =
             concat_bytes
               [
                 Code.make OpTrue [];
-                Code.make OpJumpNotTruthy [7];
+                Code.make OpJumpNotTruthy [10];
                 Code.make OpConstant [0];
+                Code.make OpJump [11];
+                Code.make OpNull [];
                 Code.make OpPop [];
                 Code.make OpConstant [1];
                 Code.make OpPop [];

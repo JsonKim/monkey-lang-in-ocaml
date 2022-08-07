@@ -109,6 +109,22 @@ let test_boolean_expressions () =
       true;
     ]
 
+let test_conditionals () =
+  let open Alcotest in
+  check (list int) "same object"
+    ([
+       "if (true) { 10 }";
+       "if (true) { 10 } else { 20 }";
+       "if (false) { 10 } else { 20 }";
+       "if (1) { 10 }";
+       "if (1 < 2) { 10 }";
+       "if (1 < 2) { 10 } else { 20 }";
+       "if (1 > 2) { 10 } else { 20 }";
+     ]
+    |> List.map parse
+    |> List.map object_to_integer)
+    [10; 10; 20; 10; 10; 10; 20]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -116,4 +132,6 @@ let () =
       ("integers test", [test_case "integers test" `Slow test_integers]);
       ( "boolean expressions test",
         [test_case "boolean expressions test" `Slow test_boolean_expressions] );
+      ( "conditionals test",
+        [test_case "conditionals test" `Slow test_conditionals] );
     ]

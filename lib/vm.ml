@@ -5,6 +5,10 @@ let obj_true = Object.Boolean true
 let obj_false = Object.Boolean false
 let native_bool_to_boolean_object b = if b then obj_true else obj_false
 
+let is_truthy = function
+  | Object.Boolean b -> b
+  | _ -> true
+
 type t = {
   constants : Object.t array;
   instructions : Code.instructions;
@@ -116,9 +120,18 @@ let run vm =
       execute_comparison vm op
     | OpMinus -> execute_minus_operator vm
     | OpBang -> execute_bang_operator vm
-    | OpJumpNotTruthy
+    | OpJumpNotTruthy ->
+      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let pos = Code.read_uint_16 operand in
+      ip := !ip + 2;
+
+      let condition = pop vm in
+      if condition |> is_truthy = false then
+        ip := pos - 1
     | OpJump ->
-      (* FIXME *) ());
+      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let pos = Code.read_uint_16 operand in
+      ip := pos - 1);
     ip := !ip + 1
   done;
   !vm

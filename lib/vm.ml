@@ -115,7 +115,10 @@ let run vm =
     | OpGreaterThan ->
       execute_comparison vm op
     | OpMinus -> execute_minus_operator vm
-    | OpBang -> execute_bang_operator vm);
+    | OpBang -> execute_bang_operator vm
+    | OpJumpNotTruthy
+    | OpJump ->
+      (* FIXME *) ());
     ip := !ip + 1
   done;
   !vm

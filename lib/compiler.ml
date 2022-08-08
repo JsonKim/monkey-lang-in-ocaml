@@ -97,25 +97,25 @@ module Compiler = struct
           | Token.Bang -> Ok (emit c OpBang [])
           | _ ->
             Error (Printf.sprintf "unknown operator %s" (token |> Token.show)))
-    | Ast.Infix { left; right; token } ->
+    | Ast.Infix { left; right; token } -> (
+      let open Bindings.Result in
       if token = Token.LT then
-        Result.bind (compile_expression c right) (fun (c, _) ->
-            Result.bind (compile_expression c left) (fun (c, _) ->
-                Ok (emit c OpGreaterThan [])))
+        let* c, _ = compile_expression c right in
+        let+ c, _ = compile_expression c left in
+        emit c OpGreaterThan []
       else
-        Result.bind (compile_expression c left) (fun (c, _) ->
-            Result.bind (compile_expression c right) (fun (c, _) ->
-                match token with
-                | Token.Plus -> Ok (emit c OpAdd [])
-                | Token.Minus -> Ok (emit c OpSub [])
-                | Token.Asterisk -> Ok (emit c OpMul [])
-                | Token.Slash -> Ok (emit c OpDiv [])
-                | Token.Eq -> Ok (emit c OpEqual [])
-                | Token.Not_Eq -> Ok (emit c OpNotEqual [])
-                | Token.GT -> Ok (emit c OpGreaterThan [])
-                | token ->
-                  Error
-                    (Printf.sprintf "unknown operator %s" (token |> Token.show))))
+        let* c, _ = compile_expression c left in
+        let* c, _ = compile_expression c right in
+        match token with
+        | Token.Plus -> Ok (emit c OpAdd [])
+        | Token.Minus -> Ok (emit c OpSub [])
+        | Token.Asterisk -> Ok (emit c OpMul [])
+        | Token.Slash -> Ok (emit c OpDiv [])
+        | Token.Eq -> Ok (emit c OpEqual [])
+        | Token.Not_Eq -> Ok (emit c OpNotEqual [])
+        | Token.GT -> Ok (emit c OpGreaterThan [])
+        | token ->
+          Error (Printf.sprintf "unknown operator %s" (token |> Token.show)))
     | Ast.Literal (Ast.Integer n) ->
       let integer = Object.Integer n in
       let c, pos = add_constant c integer in
@@ -123,34 +123,33 @@ module Compiler = struct
     | Ast.Literal (Ast.Boolean true) -> Ok (emit c Code.OpCode.OpTrue [])
     | Ast.Literal (Ast.Boolean false) -> Ok (emit c Code.OpCode.OpFalse [])
     | Ast.If { condition; consequence; alternative } ->
-      Result.bind (compile_expression c condition) (fun (c, _) ->
-          let c, jump_not_truthy_pos = emit c OpJumpNotTruthy [9999] in
-          Result.bind (compile_statements c consequence) (fun (c, _) ->
-              let c =
-                if last_instruction_is_pop c then remove_last_pop c else c in
+      let open Bindings.Result in
+      let* c, _ = compile_expression c condition in
+      let c, jump_not_truthy_pos = emit c OpJumpNotTruthy [9999] in
 
-              let c, jump_pos = emit c OpJump [9999] in
-              let after_consequense_pos = Bytes.length c.instructions in
-              change_operands c jump_not_truthy_pos [after_consequense_pos];
+      let* c, _ = compile_statements c consequence in
+      let c = if last_instruction_is_pop c then remove_last_pop c else c in
 
-              let alternative =
-                if alternative |> Option.is_none then
-                  Ok (emit c OpNull [])
-                else
-                  Result.bind
-                    (compile_statements c (Option.get alternative))
-                    (fun (c, pos) ->
-                      let c =
-                        if last_instruction_is_pop c then
-                          remove_last_pop c
-                        else
-                          c in
-                      Ok (c, pos)) in
+      let c, jump_pos = emit c OpJump [9999] in
+      let after_consequense_pos = Bytes.length c.instructions in
+      change_operands c jump_not_truthy_pos [after_consequense_pos];
 
-              Result.bind alternative (fun (c, pos) ->
-                  let after_alternative_pos = Bytes.length c.instructions in
-                  change_operands c jump_pos [after_alternative_pos];
-                  Ok (c, pos))))
+      let alternative =
+        if alternative |> Option.is_none then
+          Ok (emit c OpNull [])
+        else
+          let* c, pos = compile_statements c (Option.get alternative) in
+          let c =
+            if last_instruction_is_pop c then
+              remove_last_pop c
+            else
+              c in
+          Ok (c, pos) in
+
+      let+ c, pos = alternative in
+      let after_alternative_pos = Bytes.length c.instructions in
+      change_operands c jump_pos [after_alternative_pos];
+      (c, pos)
     | _ -> raise Not_Implemented
 
   let compile c node =

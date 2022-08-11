@@ -1,0 +1,3 @@
+(test
+ (name symbol_table)
+ (libraries monkey.lib fmt alcotest))

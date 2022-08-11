@@ -21,6 +21,8 @@ module OpCode = struct
     | OpJumpNotTruthy
     | OpJump
     | OpNull
+    | OpGetGlobal
+    | OpSetGlobal
   [@@deriving show { with_path = false }]
 
   let to_int = function
@@ -40,6 +42,8 @@ module OpCode = struct
     | OpJumpNotTruthy -> 13
     | OpJump -> 14
     | OpNull -> 15
+    | OpGetGlobal -> 16
+    | OpSetGlobal -> 17
 
   let to_op = function
     | 0 -> OpConstant
@@ -58,6 +62,8 @@ module OpCode = struct
     | 13 -> OpJumpNotTruthy
     | 14 -> OpJump
     | 15 -> OpNull
+    | 16 -> OpGetGlobal
+    | 17 -> OpSetGlobal
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -84,7 +90,9 @@ let definitions =
     | OpBang -> []
     | OpJumpNotTruthy -> [2]
     | OpJump -> [2]
-    | OpNull -> [])
+    | OpNull -> []
+    | OpGetGlobal -> [2]
+    | OpSetGlobal -> [2])
 
 let make op operands =
   let operand_widths = definitions op in

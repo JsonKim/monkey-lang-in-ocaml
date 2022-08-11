@@ -134,7 +134,10 @@ let run vm =
       let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
       let pos = Code.read_uint_16 operand in
       ip := pos - 1
-    | OpNull -> vm := push Object.Null !vm);
+    | OpNull -> vm := push Object.Null !vm
+    | OpGetGlobal
+    | OpSetGlobal ->
+      (* FIXME *) ());
     ip := !ip + 1
   done;
   !vm

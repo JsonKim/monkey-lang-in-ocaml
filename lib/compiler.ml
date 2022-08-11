@@ -20,6 +20,7 @@ module Compiler = struct
     constants : Object.t array;
     last_instruction : EmittedInstruction.t option;
     previous_instruction : EmittedInstruction.t option;
+    symbol_table : Symbol_table.t;
   }
 
   let empty =
@@ -28,6 +29,7 @@ module Compiler = struct
       constants = [||];
       last_instruction = None;
       previous_instruction = None;
+      symbol_table = Symbol_table.empty;
     }
 
   let add_constant c obj =
@@ -77,8 +79,15 @@ module Compiler = struct
   let rec compile_statement c stmt =
     match stmt with
     | Ast.ExpressionStatement { expression } ->
-      compile_expression c expression
-      |> Result.map (fun (c, _) -> emit c OpPop [])
+      let open Bindings.Result in
+      let+ c, _ = compile_expression c expression in
+      emit c OpPop []
+    | Ast.LetStatement { identifier; value } ->
+      let open Bindings.Result in
+      let* c, _ = compile_expression c value in
+      let symbol, symbol_table = Symbol_table.define identifier c.symbol_table in
+      let c = { c with symbol_table } in
+      Ok (emit c Code.OpCode.OpSetGlobal [symbol.index])
     | _ -> raise Not_Implemented
 
   and compile_statements c stmts =
@@ -150,6 +159,11 @@ module Compiler = struct
       let after_alternative_pos = Bytes.length c.instructions in
       change_operands c jump_pos [after_alternative_pos];
       (c, pos)
+    | Ast.Identifier identifier -> (
+      let symbol = Symbol_table.resolve identifier c.symbol_table in
+      match symbol with
+      | Some symbol -> Ok (emit c OpGetGlobal [symbol.index])
+      | None -> Error (Printf.sprintf "undefined variable %s" identifier))
     | _ -> raise Not_Implemented
 
   let compile c node =

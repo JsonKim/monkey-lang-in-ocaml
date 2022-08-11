@@ -300,6 +300,58 @@ let test_conditionals () =
     (["if (true) { 10 }; 3333"; "if (true) { 10 } else { 20 }; 3333;"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_global_let_statement () =
+  let open Alcotest in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                Code.make OpConstant [0];
+                Code.make OpSetGlobal [0];
+                Code.make OpConstant [1];
+                Code.make OpSetGlobal [1];
+              ];
+          constants = [|Object.Integer 1; Object.Integer 2|];
+        };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                Code.make OpConstant [0];
+                Code.make OpSetGlobal [0];
+                Code.make OpGetGlobal [0];
+                Code.make OpPop [];
+              ];
+          constants = [|Object.Integer 1|];
+        };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                Code.make OpConstant [0];
+                Code.make OpSetGlobal [0];
+                Code.make OpGetGlobal [0];
+                Code.make OpSetGlobal [1];
+                Code.make OpGetGlobal [1];
+                Code.make OpPop [];
+              ];
+          constants = [|Object.Integer 1|];
+        };
+    ]
+    ([
+       "let one = 1;\nlet two = 2;";
+       "let one = 1;\none;";
+       "let one = 1;\nlet two = one;\ntwo";
+     ]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -310,4 +362,7 @@ let () =
         [test_case "boolean expression test" `Slow test_boolean_expressions] );
       ( "conditionals test",
         [test_case "conditionals test" `Slow test_conditionals] );
+      ( "global let statement test",
+        [test_case "global let statement test" `Slow test_global_let_statement]
+      );
     ]

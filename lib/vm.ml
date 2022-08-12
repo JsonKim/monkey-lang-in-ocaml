@@ -1,6 +1,7 @@
 exception Not_Converted
 
 let stack_size = 2048
+let global_size = 65535
 let obj_true = Object.Boolean true
 let obj_false = Object.Boolean false
 let native_bool_to_boolean_object b = if b then obj_true else obj_false
@@ -15,13 +16,20 @@ type t = {
   instructions : Code.instructions;
   stack : Object.t array;
   sp : int;
+  globals : Object.t array;
 }
 
 let make bytecode =
   let open Compiler.Bytecode in
   let { instructions; constants } = bytecode in
   let stack = Array.make stack_size Object.Null in
-  { instructions; constants; stack; sp = 0 }
+  {
+    instructions;
+    constants;
+    stack;
+    sp = 0;
+    globals = Array.make global_size Object.Null;
+  }
 
 let last_popped_stack_elem vm =
   try Some (Array.get vm.stack vm.sp) with
@@ -135,9 +143,18 @@ let run vm =
       let pos = Code.read_uint_16 operand in
       ip := pos - 1
     | OpNull -> vm := push Object.Null !vm
-    | OpGetGlobal
+    | OpGetGlobal ->
+      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let global_index = Code.read_uint_16 operand in
+      ip := !ip + 2;
+      vm := push !vm.globals.(global_index) !vm
     | OpSetGlobal ->
-      (* FIXME *) ());
+      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let global_index = Code.read_uint_16 operand in
+      ip := !ip + 2;
+
+      let global_value = pop vm in
+      !vm.globals.(global_index) <- global_value);
     ip := !ip + 1
   done;
   !vm

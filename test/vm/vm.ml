@@ -142,6 +142,17 @@ let test_conditionals () =
       Object.Integer 20;
     ]
 
+let test_global_let_statements () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "let one = 1; one";
+       "let one = 1; let two = 2; one + two";
+       "let one = 1; let two = one + one; one + two";
+     ]
+    |> List.map parse)
+    [Object.Integer 1; Object.Integer 3; Object.Integer 3]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -151,4 +162,8 @@ let () =
         [test_case "boolean expressions test" `Slow test_boolean_expressions] );
       ( "conditionals test",
         [test_case "conditionals test" `Slow test_conditionals] );
+      ( "global let statements test",
+        [
+          test_case "global let statements test" `Slow test_global_let_statements;
+        ] );
     ]

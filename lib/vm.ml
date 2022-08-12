@@ -19,17 +19,15 @@ type t = {
   globals : Object.t array;
 }
 
+let empty_globals = Array.make global_size Object.Null
+
 let make bytecode =
   let open Compiler.Bytecode in
   let { instructions; constants } = bytecode in
   let stack = Array.make stack_size Object.Null in
-  {
-    instructions;
-    constants;
-    stack;
-    sp = 0;
-    globals = Array.make global_size Object.Null;
-  }
+  { instructions; constants; stack; sp = 0; globals = empty_globals }
+
+let make_with_globals_store globals bytecode = { (make bytecode) with globals }
 
 let last_popped_stack_elem vm =
   try Some (Array.get vm.stack vm.sp) with

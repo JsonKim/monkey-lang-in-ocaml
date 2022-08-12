@@ -32,6 +32,9 @@ module Compiler = struct
       symbol_table = Symbol_table.empty;
     }
 
+  let make_with_state symbol_table constants =
+    { empty with symbol_table; constants }
+
   let add_constant c obj =
     let pos = Array.length c.constants in
     let constants = Array.append c.constants [|obj|] in

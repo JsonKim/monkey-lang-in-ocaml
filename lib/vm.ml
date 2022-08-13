@@ -112,6 +112,10 @@ let execute_bang_operator vm =
   | Object.Null -> vm := push obj_true !vm
   | _ -> vm := push obj_false !vm
 
+let build_array strat_index end_index vm =
+  let elements = Array.sub vm.stack strat_index (end_index - strat_index) in
+  Object.Array (elements |> Array.to_list)
+
 let run vm =
   let ip = ref 0 in
   let vm = ref vm in
@@ -162,7 +166,14 @@ let run vm =
       ip := !ip + 2;
 
       let global_value = pop vm in
-      !vm.globals.(global_index) <- global_value);
+      !vm.globals.(global_index) <- global_value
+    | OpArray ->
+      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let num_elements = Code.read_uint_16 operand in
+      ip := !ip + 2;
+
+      let array = build_array (!vm.sp - num_elements) !vm.sp !vm in
+      vm := push array !vm);
     ip := !ip + 1
   done;
   !vm

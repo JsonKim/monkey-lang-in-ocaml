@@ -164,6 +164,16 @@ let test_string_expressions () =
       Object.String "monkeybanana";
     ]
 
+let test_array_literals () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    (["[]"; "[1, 2, 3]"; "[1 + 2, 3 * 4, 5 + 6]"] |> List.map parse)
+    [
+      Object.Array [];
+      Object.Array [Object.Integer 1; Object.Integer 2; Object.Integer 3];
+      Object.Array [Object.Integer 3; Object.Integer 12; Object.Integer 11];
+    ]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -179,4 +189,6 @@ let () =
         ] );
       ( "string expressions test",
         [test_case "string expressions test" `Slow test_string_expressions] );
+      ( "array literals test",
+        [test_case "array literals test" `Slow test_array_literals] );
     ]

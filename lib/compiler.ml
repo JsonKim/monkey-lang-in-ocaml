@@ -138,6 +138,16 @@ module Compiler = struct
       Ok (emit c Code.OpCode.OpConstant [pos])
     | Ast.Literal (Ast.Boolean true) -> Ok (emit c Code.OpCode.OpTrue [])
     | Ast.Literal (Ast.Boolean false) -> Ok (emit c Code.OpCode.OpFalse [])
+    | Ast.Literal (Ast.Array values) ->
+      let open Bindings.Result in
+      let* c, _ =
+        List.fold_left
+          (fun c value ->
+            let* c, _ = c in
+            compile_expression c value)
+          (Ok (c, 0))
+          values in
+      Ok (emit c OpArray [List.length values])
     | Ast.If { condition; consequence; alternative } ->
       let open Bindings.Result in
       let* c, _ = compile_expression c condition in

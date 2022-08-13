@@ -300,7 +300,7 @@ and parse_hash p =
       | p, true -> (
         match parse_expression lowest (p |> next_token) with
         | p, Some value ->
-          go (acc |> List.remove_assoc key |> List.cons (key, value)) p
+          go ((acc |> List.remove_assoc key) @ [(key, value)]) p
         | p, None -> (p, None))
       | p, false -> (p, None))
     | p, None -> (p, None) in

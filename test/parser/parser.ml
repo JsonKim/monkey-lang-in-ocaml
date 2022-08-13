@@ -183,13 +183,8 @@ let test_hash_literal_expression () =
             Ast.Literal
               (Ast.Hash
                  [
-                   ( Ast.Infix
-                       {
-                         token = Token.LT;
-                         left = Ast.Literal (Ast.Integer 1);
-                         right = Ast.Literal (Ast.Integer 2);
-                       },
-                     Ast.Literal (Ast.String "1 < 2") );
+                   (Ast.Literal (Ast.String "one"), Ast.Literal (Ast.Integer 1));
+                   (Ast.Literal (Ast.String "two"), Ast.Literal (Ast.Integer 2));
                    ( Ast.Literal (Ast.String "three"),
                      Ast.Infix
                        {
@@ -197,8 +192,13 @@ let test_hash_literal_expression () =
                          left = Ast.Literal (Ast.Integer 15);
                          right = Ast.Literal (Ast.Integer 5);
                        } );
-                   (Ast.Literal (Ast.String "two"), Ast.Literal (Ast.Integer 2));
-                   (Ast.Literal (Ast.String "one"), Ast.Literal (Ast.Integer 1));
+                   ( Ast.Infix
+                       {
+                         token = Token.LT;
+                         left = Ast.Literal (Ast.Integer 1);
+                         right = Ast.Literal (Ast.Integer 2);
+                       },
+                     Ast.Literal (Ast.String "1 < 2") );
                  ]);
         };
       Ast.ExpressionStatement
@@ -210,18 +210,18 @@ let test_hash_literal_expression () =
                    Ast.Literal
                      (Ast.Hash
                         [
-                          ( Ast.Literal (Ast.String "age"),
-                            Ast.Literal (Ast.Integer 24) );
                           ( Ast.Literal (Ast.String "name"),
                             Ast.Literal (Ast.String "Alice") );
+                          ( Ast.Literal (Ast.String "age"),
+                            Ast.Literal (Ast.Integer 24) );
                         ]);
                    Ast.Literal
                      (Ast.Hash
                         [
-                          ( Ast.Literal (Ast.String "age"),
-                            Ast.Literal (Ast.Integer 28) );
                           ( Ast.Literal (Ast.String "name"),
                             Ast.Literal (Ast.String "Anna") );
+                          ( Ast.Literal (Ast.String "age"),
+                            Ast.Literal (Ast.Integer 28) );
                         ]);
                  ]);
         };

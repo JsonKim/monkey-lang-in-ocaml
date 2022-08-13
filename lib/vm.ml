@@ -116,6 +116,18 @@ let build_array strat_index end_index vm =
   let elements = Array.sub vm.stack strat_index (end_index - strat_index) in
   Object.Array (elements |> Array.to_list)
 
+let build_hash strat_index end_index vm =
+  let hash = ref Object.empty_hash in
+  let index = ref strat_index in
+  while !index < end_index do
+    let key = vm.stack.(!index) in
+    let value = vm.stack.(!index + 1) in
+    hash := !hash |> Object.add_hash key value;
+
+    index := !index + 2
+  done;
+  Object.Hash !hash
+
 let run vm =
   let ip = ref 0 in
   let vm = ref vm in
@@ -173,7 +185,14 @@ let run vm =
       ip := !ip + 2;
 
       let array = build_array (!vm.sp - num_elements) !vm.sp !vm in
-      vm := push array !vm);
+      vm := push array !vm
+    | OpHash ->
+      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let num_elements = Code.read_uint_16 operand in
+      ip := !ip + 2;
+
+      let hash = build_hash (!vm.sp - num_elements) !vm.sp !vm in
+      vm := push hash !vm);
     ip := !ip + 1
   done;
   !vm

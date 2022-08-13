@@ -29,6 +29,7 @@ and hash_pair = {
   key : t;
   value : t;
 }
+[@@deriving show, eq]
 
 and option_t = t option [@@deriving show, eq]
 

@@ -4,6 +4,9 @@ exception Compile_Failed
 
 let object_testable = Alcotest.testable Object.pp Object.equal
 
+let hash_pair_testable =
+  Alcotest.testable Object.pp_hash_pair Object.equal_hash_pair
+
 let parse input =
   let compiler = Compiler.Compiler.empty in
   let ast = input |> Lexer.make |> Parser.make |> Parser.parse_program |> snd in
@@ -15,6 +18,11 @@ let parse input =
     | Some obj -> obj
     | None -> raise Compile_Failed)
   | Error _ -> raise Compile_Failed
+
+let hash_to_list obj =
+  match obj with
+  | Object.Hash hash -> hash |> Object.Hash.to_seq |> List.of_seq
+  | _ -> raise Not_found
 
 let object_to_integer obj =
   match obj with
@@ -174,6 +182,26 @@ let test_array_literals () =
       Object.Array [Object.Integer 3; Object.Integer 12; Object.Integer 11];
     ]
 
+let test_hash_literals () =
+  let open Alcotest in
+  check
+    (list (list (pair string hash_pair_testable)))
+    "same object"
+    (["{}"; "{1: 2, 2: 3}"; "{1 + 1: 2 * 2, 3 + 3: 4 * 4}"]
+    |> List.map parse
+    |> List.map hash_to_list)
+    ([
+       Object.empty_hash;
+       Object.empty_hash
+       |> Object.add_hash (Object.Integer 1) (Object.Integer 2)
+       |> Object.add_hash (Object.Integer 2) (Object.Integer 3);
+       Object.empty_hash
+       |> Object.add_hash (Object.Integer 2) (Object.Integer 4)
+       |> Object.add_hash (Object.Integer 6) (Object.Integer 16);
+     ]
+    |> List.map Object.Hash.to_seq
+    |> List.map List.of_seq)
+
 let () =
   let open Alcotest in
   run "Code"
@@ -191,4 +219,6 @@ let () =
         [test_case "string expressions test" `Slow test_string_expressions] );
       ( "array literals test",
         [test_case "array literals test" `Slow test_array_literals] );
+      ( "hash literals test",
+        [test_case "hash literals test" `Slow test_hash_literals] );
     ]

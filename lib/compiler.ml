@@ -148,6 +148,17 @@ module Compiler = struct
           (Ok (c, 0))
           values in
       Ok (emit c OpArray [List.length values])
+    | Ast.Literal (Ast.Hash pairs) ->
+      let open Bindings.Result in
+      let* c, _ =
+        List.fold_left
+          (fun c (key, value) ->
+            let* c, _ = c in
+            let* c, _ = compile_expression c key in
+            compile_expression c value)
+          (Ok (c, 0))
+          pairs in
+      Ok (emit c OpHash [List.length pairs * 2])
     | Ast.If { condition; consequence; alternative } ->
       let open Bindings.Result in
       let* c, _ = compile_expression c condition in

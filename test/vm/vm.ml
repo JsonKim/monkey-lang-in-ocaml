@@ -202,6 +202,35 @@ let test_hash_literals () =
     |> List.map Object.Hash.to_seq
     |> List.map List.of_seq)
 
+let test_index_expressions () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "[1, 2, 3][1]";
+       "[1, 2, 3][0 + 2]";
+       "[[1, 1, 1]][0][0]";
+       "[][0]";
+       "[1, 2, 3][99]";
+       "[1][-1]";
+       "{1: 1, 2: 2}[1]";
+       "{1: 1, 2: 2}[2]";
+       "{1: 1}[0]";
+       "{}[0]";
+     ]
+    |> List.map parse)
+    [
+      Object.Integer 2;
+      Object.Integer 3;
+      Object.Integer 1;
+      Object.Null;
+      Object.Null;
+      Object.Null;
+      Object.Integer 1;
+      Object.Integer 2;
+      Object.Null;
+      Object.Null;
+    ]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -221,4 +250,6 @@ let () =
         [test_case "array literals test" `Slow test_array_literals] );
       ( "hash literals test",
         [test_case "hash literals test" `Slow test_hash_literals] );
+      ( "index expressions test",
+        [test_case "index expressions test" `Slow test_index_expressions] );
     ]

@@ -25,6 +25,7 @@ module OpCode = struct
     | OpSetGlobal
     | OpArray
     | OpHash
+    | OpIndex
   [@@deriving show { with_path = false }]
 
   let to_int = function
@@ -48,6 +49,7 @@ module OpCode = struct
     | OpSetGlobal -> 17
     | OpArray -> 18
     | OpHash -> 19
+    | OpIndex -> 20
 
   let to_op = function
     | 0 -> OpConstant
@@ -70,6 +72,7 @@ module OpCode = struct
     | 17 -> OpSetGlobal
     | 18 -> OpArray
     | 19 -> OpHash
+    | 20 -> OpIndex
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -100,7 +103,8 @@ let definitions =
     | OpGetGlobal -> [2]
     | OpSetGlobal -> [2]
     | OpArray -> [2]
-    | OpHash -> [2])
+    | OpHash -> [2]
+    | OpIndex -> [])
 
 let make op operands =
   let operand_widths = definitions op in

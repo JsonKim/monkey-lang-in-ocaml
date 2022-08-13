@@ -112,6 +112,29 @@ let execute_bang_operator vm =
   | Object.Null -> vm := push obj_true !vm
   | _ -> vm := push obj_false !vm
 
+let execute_array_index vm array index =
+  if index < 0 || index >= List.length array then
+    vm := push Object.Null !vm
+  else
+    vm := push (List.nth array index) !vm
+
+let execute_hash_index vm hash index =
+  let value =
+    if Object.is_hashable index then
+      match hash |> Object.Hash.find_opt (Object.show index) with
+      | Some { Object.key = _; value } -> value
+      | None -> Object.Null
+    else
+      Object.Null in
+  vm := push value !vm
+
+let execute_index_expression vm left index =
+  match (left, index) with
+  | Object.Array array, Object.Integer index ->
+    execute_array_index vm array index
+  | Object.Hash hash, _ -> execute_hash_index vm hash index
+  | _ -> raise Not_Converted
+
 let build_array strat_index end_index vm =
   let elements = Array.sub vm.stack strat_index (end_index - strat_index) in
   Object.Array (elements |> Array.to_list)
@@ -192,7 +215,11 @@ let run vm =
       ip := !ip + 2;
 
       let hash = build_hash (!vm.sp - num_elements) !vm.sp !vm in
-      vm := push hash !vm);
+      vm := push hash !vm
+    | OpIndex ->
+      let index = pop vm in
+      let left = pop vm in
+      execute_index_expression vm left index);
     ip := !ip + 1
   done;
   !vm

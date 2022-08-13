@@ -501,6 +501,62 @@ let test_hash_literals () =
     (["{}"; "{1: 2, 3: 4, 5: 6}"; "{1: 2 + 3, 4: 5 * 6}"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_index_expressions () =
+  let open Alcotest in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                Code.make OpConstant [0];
+                Code.make OpConstant [1];
+                Code.make OpConstant [2];
+                Code.make OpArray [3];
+                Code.make OpConstant [3];
+                Code.make OpConstant [4];
+                Code.make OpAdd [];
+                Code.make OpIndex [];
+                Code.make OpPop [];
+              ];
+          constants =
+            [|
+              Object.Integer 1;
+              Object.Integer 2;
+              Object.Integer 3;
+              Object.Integer 1;
+              Object.Integer 1;
+            |];
+        };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                Code.make OpConstant [0];
+                Code.make OpConstant [1];
+                Code.make OpHash [2];
+                Code.make OpConstant [2];
+                Code.make OpConstant [3];
+                Code.make OpSub [];
+                Code.make OpIndex [];
+                Code.make OpPop [];
+              ];
+          constants =
+            [|
+              Object.Integer 1;
+              Object.Integer 2;
+              Object.Integer 2;
+              Object.Integer 1;
+            |];
+        };
+    ]
+    (["[1, 2, 3][1 + 1]"; "{1: 2}[2 - 1]"]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -520,4 +576,6 @@ let () =
         [test_case "array literals test" `Slow test_array_literals] );
       ( "hash literals test",
         [test_case "hash literals test" `Slow test_hash_literals] );
+      ( "index expressions test",
+        [test_case "index expressions test" `Slow test_index_expressions] );
     ]

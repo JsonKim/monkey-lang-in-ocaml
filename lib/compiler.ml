@@ -192,6 +192,11 @@ module Compiler = struct
       match symbol with
       | Some symbol -> Ok (emit c OpGetGlobal [symbol.index])
       | None -> Error (Printf.sprintf "undefined variable %s" identifier))
+    | Ast.Index { left; index } ->
+      let open Bindings.Result in
+      let* c, _ = compile_expression c left in
+      let+ c, _ = compile_expression c index in
+      emit c OpIndex []
     | _ -> raise Not_Implemented
 
   let compile c node =

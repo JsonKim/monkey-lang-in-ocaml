@@ -153,6 +153,17 @@ let test_global_let_statements () =
     |> List.map parse)
     [Object.Integer 1; Object.Integer 3; Object.Integer 3]
 
+let test_string_expressions () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([{|"monkey"|}; {|"mon" + "key"|}; {|"mon" + "key" + "banana"|}]
+    |> List.map parse)
+    [
+      Object.String "monkey";
+      Object.String "monkey";
+      Object.String "monkeybanana";
+    ]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -166,4 +177,6 @@ let () =
         [
           test_case "global let statements test" `Slow test_global_let_statements;
         ] );
+      ( "string expressions test",
+        [test_case "string expressions test" `Slow test_string_expressions] );
     ]

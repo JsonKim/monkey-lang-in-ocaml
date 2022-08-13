@@ -56,12 +56,22 @@ let execute_binary_integer_operation vm op l r =
     | _ -> raise Not_Converted in
   vm := push (Object.Integer result) !vm
 
+let execute_binary_string_operation vm op l r =
+  let open Code.OpCode in
+  let result =
+    match op with
+    | OpAdd -> l ^ r
+    | _ -> raise Not_Converted in
+  vm := push (Object.String result) !vm
+
 let execute_binary_operation vm op =
   let right = pop vm in
   let left = pop vm in
   match (left, right) with
   | Object.Integer l, Object.Integer r ->
     execute_binary_integer_operation vm op l r
+  | Object.String l, Object.String r ->
+    execute_binary_string_operation vm op l r
   | _ -> raise Not_Converted
 
 let execute_integer_comparison vm op l r =

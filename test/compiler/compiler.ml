@@ -352,6 +352,34 @@ let test_global_let_statement () =
      ]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_string_expressions () =
+  let open Alcotest in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions =
+            concat_bytes [Code.make OpConstant [0]; Code.make OpPop []];
+          constants = [|Object.String "monkey"|];
+        };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                Code.make OpConstant [0];
+                Code.make OpConstant [1];
+                Code.make OpAdd [];
+                Code.make OpPop [];
+              ];
+          constants = [|Object.String "mon"; Object.String "key"|];
+        };
+    ]
+    ([{|"monkey"|}; {|"mon" + "key"|}]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -365,4 +393,6 @@ let () =
       ( "global let statement test",
         [test_case "global let statement test" `Slow test_global_let_statement]
       );
+      ( "string expressions test",
+        [test_case "string expressions test" `Slow test_string_expressions] );
     ]

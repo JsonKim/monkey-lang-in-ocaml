@@ -132,6 +132,10 @@ module Compiler = struct
       let integer = Object.Integer n in
       let c, pos = add_constant c integer in
       Ok (emit c Code.OpCode.OpConstant [pos])
+    | Ast.Literal (Ast.String value) ->
+      let str = Object.String value in
+      let c, pos = add_constant c str in
+      Ok (emit c Code.OpCode.OpConstant [pos])
     | Ast.Literal (Ast.Boolean true) -> Ok (emit c Code.OpCode.OpTrue [])
     | Ast.Literal (Ast.Boolean false) -> Ok (emit c Code.OpCode.OpFalse [])
     | Ast.If { condition; consequence; alternative } ->

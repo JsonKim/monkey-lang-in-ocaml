@@ -17,6 +17,7 @@ type t =
   | Quote    of Ast.expression
   | Macro    of macro
   | Error    of string
+  | CompiledFunction of Code.instructions
 [@@deriving show, eq]
 
 and macro = {
@@ -56,5 +57,6 @@ let decode_tag_of = function
   | Quote _ -> "Quote"
   | Macro _ -> "Macro"
   | Error _ -> "Error"
+  | CompiledFunction _ -> "CompiledFunction"
 
 let compare x y = compare (show x) (show y)

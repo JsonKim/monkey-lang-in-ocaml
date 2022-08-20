@@ -1,22 +1,22 @@
 module Hash = Map.Make (String)
 
 type t =
-  | Integer  of int
-  | Boolean  of bool
-  | String   of string
+  | Integer          of int
+  | Boolean          of bool
+  | String           of string
   | Null
-  | Return   of t
-  | Function of {
+  | Return           of t
+  | Function         of {
       parameters : Ast.identifier list;
       body : Ast.blockStatement;
       env : t Environment.t;
     }
-  | Builtin  of { fn : t list -> t [@equal fun _ _ -> false] }
-  | Array    of t list
-  | Hash     of (hash_pair Hash.t[@opaque])
-  | Quote    of Ast.expression
-  | Macro    of macro
-  | Error    of string
+  | Builtin          of { fn : t list -> t [@equal fun _ _ -> false] }
+  | Array            of t list
+  | Hash             of (hash_pair Hash.t[@opaque])
+  | Quote            of Ast.expression
+  | Macro            of macro
+  | Error            of string
   | CompiledFunction of Code.instructions
 [@@deriving show, eq]
 

@@ -557,6 +557,34 @@ let test_index_expressions () =
     (["[1, 2, 3][1 + 1]"; "{1: 2}[2 - 1]"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_functions () =
+  let open Alcotest in
+  let open Code in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
+          constants =
+            [|
+              Object.Integer 5;
+              Object.Integer 10;
+              Object.CompiledFunction
+                (concat_bytes
+                   [
+                     make OpConstant [0];
+                     make OpConstant [1];
+                     make OpAdd [];
+                     make OpReturnValue [];
+                   ]);
+            |];
+        };
+    ]
+    (["fn() { return 5 + 10 }"]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -578,4 +606,5 @@ let () =
         [test_case "hash literals test" `Slow test_hash_literals] );
       ( "index expressions test",
         [test_case "index expressions test" `Slow test_index_expressions] );
+      ("functions test", [test_case "functions test" `Slow test_functions]);
     ]

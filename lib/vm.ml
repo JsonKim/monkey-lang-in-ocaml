@@ -219,7 +219,8 @@ let run vm =
     | OpIndex ->
       let index = pop vm in
       let left = pop vm in
-      execute_index_expression vm left index);
+      execute_index_expression vm left index
+    | OpCall -> (* FIXME *) ());
     ip := !ip + 1
   done;
   !vm

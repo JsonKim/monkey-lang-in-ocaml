@@ -86,10 +86,10 @@ module Compiler = struct
       { (c.scopes.(c.scope_index)) with previous_instruction; last_instruction };
     c
 
-  let last_instruction_is_pop c =
+  let last_instruction_is op c =
     c.scopes.(c.scope_index).last_instruction
     |> Option.map (function
-         | { EmittedInstruction.op_code = Code.OpCode.OpPop; _ } -> true
+         | { EmittedInstruction.op_code; _ } when op_code = op -> true
          | _ -> false)
     |> Option.value ~default:false
 
@@ -214,7 +214,7 @@ module Compiler = struct
       let c, jump_not_truthy_pos = emit c OpJumpNotTruthy [9999] in
 
       let* c, _ = compile_statements c consequence in
-      let c = if last_instruction_is_pop c then remove_last_pop c else c in
+      let c = if last_instruction_is OpPop c then remove_last_pop c else c in
 
       let c, jump_pos = emit c OpJump [9999] in
       let after_consequense_pos = Bytes.length (c |> current_instructions) in
@@ -226,7 +226,7 @@ module Compiler = struct
         else
           let* c, pos = compile_statements c (Option.get alternative) in
           let c =
-            if last_instruction_is_pop c then
+            if last_instruction_is OpPop c then
               remove_last_pop c
             else
               c in

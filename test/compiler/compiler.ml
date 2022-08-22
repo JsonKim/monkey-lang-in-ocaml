@@ -584,8 +584,42 @@ let test_functions () =
                    ]);
             |];
         };
+      Ok
+        {
+          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
+          constants =
+            [|
+              Object.Integer 5;
+              Object.Integer 10;
+              Object.CompiledFunction
+                (concat_bytes
+                   [
+                     make OpConstant [0];
+                     make OpConstant [1];
+                     make OpAdd [];
+                     make OpReturnValue [];
+                   ]);
+            |];
+        };
+      Ok
+        {
+          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
+          constants =
+            [|
+              Object.Integer 1;
+              Object.Integer 2;
+              Object.CompiledFunction
+                (concat_bytes
+                   [
+                     make OpConstant [0];
+                     make OpPop [];
+                     make OpConstant [1];
+                     make OpReturnValue [];
+                   ]);
+            |];
+        };
     ]
-    (["fn() { return 5 + 10 }"]
+    (["fn() { return 5 + 10 }"; "fn() { 5 + 10 }"; "fn() { 1; 2 }"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
 module Scopes = struct

@@ -666,6 +666,23 @@ module Scopes = struct
     ]
 end
 
+let test_functions_without_return_value () =
+  let open Alcotest in
+  let open Code in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions = concat_bytes [make OpConstant [0]; make OpPop []];
+          constants =
+            [|Object.CompiledFunction (concat_bytes [make OpReturn []])|];
+        };
+    ]
+    (["fn() { }"]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Compiler"
@@ -689,4 +706,9 @@ let () =
         [test_case "index expressions test" `Slow test_index_expressions] );
       ("compiler scopes test", Scopes.run ());
       ("functions test", [test_case "functions test" `Slow test_functions]);
+      ( "functions without return value test",
+        [
+          test_case "functions without return value test" `Slow
+            test_functions_without_return_value;
+        ] );
     ]

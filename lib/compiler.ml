@@ -124,7 +124,15 @@ module Compiler = struct
       c.scopes.(c.scope_index).last_instruction
       |> Option.map (fun ei -> ei.EmittedInstruction.position)
       |> Option.get in
-    replace_instruction c last_pos (Code.make OpReturnValue [])
+    replace_instruction c last_pos (Code.make OpReturnValue []);
+
+    let scope = c.scopes.(c.scope_index) in
+    let last_instruction = scope.last_instruction in
+    let last_instruction =
+      Option.map
+        (fun ei -> { ei with EmittedInstruction.op_code = OpReturnValue })
+        last_instruction in
+    c.scopes.(c.scope_index) <- { scope with last_instruction }
 
   let emit c op operands =
     let ins = Code.make op operands in
@@ -261,6 +269,12 @@ module Compiler = struct
 
       if last_instruction_is OpPop c then
         replace_last_pop_with_return c;
+
+      let c =
+        if last_instruction_is OpReturnValue c then
+          c
+        else
+          emit c OpReturn [] |> fst in
 
       let instructions, c = get_current_scope_and_leave_scope c in
       let compiled_fn = Object.CompiledFunction instructions in

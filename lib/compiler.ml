@@ -119,6 +119,13 @@ module Compiler = struct
     let new_instruction = Code.make op operand in
     replace_instruction c op_pos new_instruction
 
+  let replace_last_pop_with_return c =
+    let last_pos =
+      c.scopes.(c.scope_index).last_instruction
+      |> Option.map (fun ei -> ei.EmittedInstruction.position)
+      |> Option.get in
+    replace_instruction c last_pos (Code.make OpReturnValue [])
+
   let emit c op operands =
     let ins = Code.make op operands in
     let c, pos = add_instruction c ins in
@@ -249,10 +256,16 @@ module Compiler = struct
     | Ast.Function { parameters = _; body } ->
       let open Bindings.Result in
       let c = enter_scope c in
+
       let+ c, _ = compile_statements c body in
+
+      if last_instruction_is OpPop c then
+        replace_last_pop_with_return c;
+
       let instructions, c = get_current_scope_and_leave_scope c in
       let compiled_fn = Object.CompiledFunction instructions in
       let c, constant_index = add_constant c compiled_fn in
+
       emit c OpConstant [constant_index]
     | _ -> raise Not_Implemented
 

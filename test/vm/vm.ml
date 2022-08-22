@@ -8,7 +8,7 @@ let hash_pair_testable =
   Alcotest.testable Object.pp_hash_pair Object.equal_hash_pair
 
 let parse input =
-  let compiler = Compiler.Compiler.empty in
+  let compiler = Compiler.Compiler.make () in
   let ast = input |> Lexer.make |> Parser.make |> Parser.parse_program |> snd in
   match Compiler.Compiler.compile compiler ast with
   | Ok (c, _) -> (

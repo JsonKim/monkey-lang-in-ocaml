@@ -39,7 +39,10 @@ module Compiler_Test = struct
   [@@deriving eq]
 
   let convert c =
-    { instructions = c.Compiler.Compiler.instructions; constants = c.constants }
+    {
+      instructions = c |> Compiler.Compiler.current_instructions;
+      constants = c.constants;
+    }
 end
 
 let compile_testable =
@@ -61,7 +64,7 @@ let parser code =
 let ast_to_test_compiler ast =
   let open Compiler.Compiler in
   ast
-  |> compile empty
+  |> compile (make ())
   |> Result.map (fun x -> x |> fst |> Compiler_Test.convert)
 
 let test_integer_arithmetic () =
@@ -585,9 +588,53 @@ let test_functions () =
     (["fn() { return 5 + 10 }"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+module Scopes = struct
+  let test_scope_index expected_scope_index actual_c () =
+    let open Alcotest in
+    check int "same scope_index" expected_scope_index
+      actual_c.Compiler.Compiler.scope_index
+
+  let run () =
+    let open Compiler.Compiler in
+    let open Alcotest in
+    let compiler = make () in
+    let test_scope_index_before_enter = test_scope_index 0 compiler in
+
+    let c, _ = emit compiler OpMul [] in
+    let c = enter_scope c in
+    let test_scope_after_enter = test_scope_index 1 c in
+
+    let c, _ = emit c OpSub [] in
+    let instructions = c.scopes.(c.scope_index).instructions in
+    let test_scoped_instrunctions () =
+      check string "only OpSub"
+        (Code.make OpSub [] |> Code.to_string)
+        (instructions |> Code.to_string) in
+
+    let c = leave_scope c in
+    let test_scope_index_after_leave = test_scope_index 0 c in
+
+    let c, _ = emit c OpAdd [] in
+    let instructions = c.scopes.(c.scope_index).instructions in
+    let test_main_instrunctions () =
+      check string "OpMul & OpAdd"
+        ([Code.make OpMul []; Code.make OpAdd []]
+        |> concat_bytes
+        |> Code.to_string)
+        (instructions |> Code.to_string) in
+
+    [
+      test_case "before enter" `Slow test_scope_index_before_enter;
+      test_case "after enter" `Slow test_scope_after_enter;
+      test_case "scoped instrunctions" `Slow test_scoped_instrunctions;
+      test_case "after leave" `Slow test_scope_index_after_leave;
+      test_case "main instrunctions" `Slow test_main_instrunctions;
+    ]
+end
+
 let () =
   let open Alcotest in
-  run "Parser"
+  run "Compiler"
     [
       ( "integer arithmetic test",
         [test_case "integer arithmetic test" `Slow test_integer_arithmetic] );
@@ -606,5 +653,6 @@ let () =
         [test_case "hash literals test" `Slow test_hash_literals] );
       ( "index expressions test",
         [test_case "index expressions test" `Slow test_index_expressions] );
+      ("compiler scopes test", Scopes.run ());
       ("functions test", [test_case "functions test" `Slow test_functions]);
     ]

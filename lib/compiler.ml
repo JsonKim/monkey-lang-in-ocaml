@@ -14,26 +14,54 @@ module EmittedInstruction = struct
   }
 end
 
-module Compiler = struct
+module CompilationScope = struct
   type t = {
     instructions : Code.instructions;
-    constants : Object.t array;
     last_instruction : EmittedInstruction.t option;
     previous_instruction : EmittedInstruction.t option;
+  }
+end
+
+module Compiler = struct
+  type t = {
+    constants : Object.t array;
     symbol_table : Symbol_table.t;
+    scopes : CompilationScope.t array;
+    scope_index : int;
   }
 
-  let empty =
+  let make_scope () =
+    CompilationScope.
+      {
+        instructions = Bytes.empty;
+        last_instruction = None;
+        previous_instruction = None;
+      }
+
+  let make () =
     {
-      instructions = Bytes.empty;
       constants = [||];
-      last_instruction = None;
-      previous_instruction = None;
       symbol_table = Symbol_table.empty;
+      scopes = [|make_scope ()|];
+      scope_index = 0;
     }
 
+  let current_instructions c = c.scopes.(c.scope_index).instructions
+
+  let enter_scope c =
+    let scope = make_scope () in
+    let scope_index = c.scope_index + 1 in
+    let scopes = Array.append c.scopes [|scope|] in
+    { c with scopes; scope_index }
+
+  let leave_scope c =
+    let scopes = Array.sub c.scopes 0 ((c.scopes |> Array.length) - 1) in
+    let scope_index = c.scope_index - 1 in
+    (* 원래 구현에서는 pop된 instructions를 리턴 하고 있음 *)
+    { c with scopes; scope_index }
+
   let make_with_state symbol_table constants =
-    { empty with symbol_table; constants }
+    { (make ()) with symbol_table; constants }
 
   let add_constant c obj =
     let pos = Array.length c.constants in
@@ -41,35 +69,49 @@ module Compiler = struct
     ({ c with constants }, pos)
 
   let add_instruction c ins =
-    let pos = Bytes.length c.instructions in
-    let instructions = Bytes.cat c.instructions ins in
-    ({ c with instructions }, pos)
+    let pos = c |> current_instructions |> Bytes.length in
+    let updated_instructions = Bytes.cat (c |> current_instructions) ins in
+    c.scopes.(c.scope_index) <-
+      { (c.scopes.(c.scope_index)) with instructions = updated_instructions };
+    (c, pos)
 
   let set_last_instruction op_code position c =
-    let previous_instruction = c.last_instruction in
+    let previous_instruction = c.scopes.(c.scope_index).last_instruction in
     let last_instruction = Some { EmittedInstruction.op_code; position } in
-    { c with previous_instruction; last_instruction }
+    c.scopes.(c.scope_index) <-
+      { (c.scopes.(c.scope_index)) with previous_instruction; last_instruction };
+    c
 
   let last_instruction_is_pop c =
-    c.last_instruction
+    c.scopes.(c.scope_index).last_instruction
     |> Option.map (function
          | { EmittedInstruction.op_code = Code.OpCode.OpPop; _ } -> true
          | _ -> false)
     |> Option.value ~default:false
 
   let remove_last_pop c =
-    let instructions =
-      Bytes.sub c.instructions 0 (Bytes.length c.instructions - 1) in
-    let last_instruction = c.previous_instruction in
-    { c with instructions; last_instruction }
+    let last_position =
+      c.scopes.(c.scope_index).last_instruction
+      |> Option.map (fun ei -> ei.EmittedInstruction.position)
+      |> Option.get in
+    let instructions = current_instructions c in
+    let instructions = Bytes.sub instructions 0 last_position in
+    let last_instruction = c.scopes.(c.scope_index).previous_instruction in
+    c.scopes.(c.scope_index) <-
+      { (c.scopes.(c.scope_index)) with instructions; last_instruction };
+    c
 
   let replace_instruction c pos new_instruction =
-    Bytes.blit new_instruction 0 c.instructions pos
+    Bytes.blit new_instruction 0
+      (c |> current_instructions)
+      pos
       (Bytes.length new_instruction)
 
   let change_operands c op_pos operand =
     let op =
-      Bytes.get c.instructions op_pos |> int_of_char |> Code.OpCode.to_op in
+      Bytes.get (c |> current_instructions) op_pos
+      |> int_of_char
+      |> Code.OpCode.to_op in
     let new_instruction = Code.make op operand in
     replace_instruction c op_pos new_instruction
 
@@ -168,7 +210,7 @@ module Compiler = struct
       let c = if last_instruction_is_pop c then remove_last_pop c else c in
 
       let c, jump_pos = emit c OpJump [9999] in
-      let after_consequense_pos = Bytes.length c.instructions in
+      let after_consequense_pos = Bytes.length (c |> current_instructions) in
       change_operands c jump_not_truthy_pos [after_consequense_pos];
 
       let alternative =
@@ -184,7 +226,7 @@ module Compiler = struct
           Ok (c, pos) in
 
       let+ c, pos = alternative in
-      let after_alternative_pos = Bytes.length c.instructions in
+      let after_alternative_pos = Bytes.length (c |> current_instructions) in
       change_operands c jump_pos [after_alternative_pos];
       (c, pos)
     | Ast.Identifier identifier -> (
@@ -207,5 +249,8 @@ module Compiler = struct
     | _ -> raise Not_Implemented
 
   let to_bytecode c =
-    { Bytecode.instructions = c.instructions; constants = c.constants }
+    {
+      Bytecode.instructions = c |> current_instructions;
+      constants = c.constants;
+    }
 end

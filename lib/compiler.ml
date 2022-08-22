@@ -60,6 +60,10 @@ module Compiler = struct
     (* 원래 구현에서는 pop된 instructions를 리턴 하고 있음 *)
     { c with scopes; scope_index }
 
+  let get_current_scope_and_leave_scope c =
+    let instructions = current_instructions c in
+    (instructions, leave_scope c)
+
   let make_with_state symbol_table constants =
     { (make ()) with symbol_table; constants }
 
@@ -133,7 +137,10 @@ module Compiler = struct
       let symbol, symbol_table = Symbol_table.define identifier c.symbol_table in
       let c = { c with symbol_table } in
       Ok (emit c Code.OpCode.OpSetGlobal [symbol.index])
-    | _ -> raise Not_Implemented
+    | Ast.ReturnStatement { value } ->
+      let open Bindings.Result in
+      let+ c, _ = compile_expression c value in
+      emit c OpReturnValue []
 
   and compile_statements c stmts =
     List.fold_left
@@ -239,6 +246,14 @@ module Compiler = struct
       let* c, _ = compile_expression c left in
       let+ c, _ = compile_expression c index in
       emit c OpIndex []
+    | Ast.Function { parameters = _; body } ->
+      let open Bindings.Result in
+      let c = enter_scope c in
+      let+ c, _ = compile_statements c body in
+      let instructions, c = get_current_scope_and_leave_scope c in
+      let compiled_fn = Object.CompiledFunction instructions in
+      let c, constant_index = add_constant c compiled_fn in
+      emit c OpConstant [constant_index]
     | _ -> raise Not_Implemented
 
   let compile c node =

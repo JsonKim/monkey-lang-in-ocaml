@@ -683,6 +683,46 @@ let test_functions_without_return_value () =
     (["fn() { }"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_function_calls () =
+  let open Alcotest in
+  let open Code in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions =
+            concat_bytes [make OpConstant [1]; make OpCall []; make OpPop []];
+          constants =
+            [|
+              Object.Integer 24;
+              Object.CompiledFunction
+                (concat_bytes [make OpConstant [0]; make OpReturnValue []]);
+            |];
+        };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                make OpConstant [1];
+                make OpSetGlobal [0];
+                make OpGetGlobal [0];
+                make OpCall [];
+                make OpPop [];
+              ];
+          constants =
+            [|
+              Object.Integer 24;
+              Object.CompiledFunction
+                (concat_bytes [make OpConstant [0]; make OpReturnValue []]);
+            |];
+        };
+    ]
+    (["fn() { 24 }();"; "let noArg = fn() { 24 };\nnoArg();"]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Compiler"
@@ -711,4 +751,6 @@ let () =
           test_case "functions without return value test" `Slow
             test_functions_without_return_value;
         ] );
+      ( "function calls test",
+        [test_case "function calls test" `Slow test_function_calls] );
     ]

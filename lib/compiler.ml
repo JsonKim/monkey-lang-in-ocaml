@@ -281,6 +281,10 @@ module Compiler = struct
       let c, constant_index = add_constant c compiled_fn in
 
       emit c OpConstant [constant_index]
+    | Ast.Call { fn; arguments = _ } ->
+      let open Bindings.Result in
+      let+ c, _ = compile_expression c fn in
+      emit c OpCall []
     | _ -> raise Not_Implemented
 
   let compile c node =

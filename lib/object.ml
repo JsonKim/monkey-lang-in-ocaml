@@ -1,5 +1,7 @@
 module Hash = Map.Make (String)
 
+type compiledFunction = Code.instructions [@@deriving show, eq]
+
 type t =
   | Integer          of int
   | Boolean          of bool
@@ -17,7 +19,7 @@ type t =
   | Quote            of Ast.expression
   | Macro            of macro
   | Error            of string
-  | CompiledFunction of Code.instructions
+  | CompiledFunction of compiledFunction
 [@@deriving show, eq]
 
 and macro = {

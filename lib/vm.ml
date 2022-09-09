@@ -2,6 +2,7 @@ exception Not_Converted
 
 let stack_size = 2048
 let global_size = 65535
+let max_frames = 1024
 let obj_true = Object.Boolean true
 let obj_false = Object.Boolean false
 let native_bool_to_boolean_object b = if b then obj_true else obj_false
@@ -13,10 +14,11 @@ let is_truthy = function
 
 type t = {
   constants : Object.t array;
-  instructions : Code.instructions;
   stack : Object.t array;
   sp : int;
   globals : Object.t array;
+  frames : Frame.t array;
+  frames_index : int;
 }
 
 let empty_globals = Array.make global_size Object.Null
@@ -24,8 +26,21 @@ let empty_globals = Array.make global_size Object.Null
 let make bytecode =
   let open Compiler.Bytecode in
   let { instructions; constants } = bytecode in
+  let main_fn = instructions in
+  let main_frame = Frame.make main_fn in
+
+  let frames = Array.make max_frames (Frame.make Bytes.empty) in
+  frames.(0) <- main_frame;
+
   let stack = Array.make stack_size Object.Null in
-  { instructions; constants; stack; sp = 0; globals = empty_globals }
+  {
+    constants;
+    stack;
+    sp = 0;
+    globals = empty_globals;
+    frames;
+    frames_index = 1;
+  }
 
 let make_with_globals_store globals bytecode = { (make bytecode) with globals }
 
@@ -44,6 +59,16 @@ let pop vm =
   let obj = Array.get !vm.stack (!vm.sp - 1) in
   vm := { !vm with sp = !vm.sp - 1 };
   obj
+
+let current_frame vm = vm.frames.(vm.frames_index - 1)
+
+let push_frame vm f =
+  vm.frames.(vm.frames_index) <- f;
+  { vm with frames_index = vm.frames_index + 1 }
+
+let pop_frame vm =
+  let frames_index = vm.frames_index - 1 in
+  ({ vm with frames_index }, vm.frames.(vm.frames_index))
 
 let execute_binary_integer_operation vm op l r =
   let open Code.OpCode in
@@ -152,17 +177,32 @@ let build_hash strat_index end_index vm =
   Object.Hash !hash
 
 let run vm =
-  let ip = ref 0 in
+  let move_current_frame_ip vm value =
+    let frame = !vm |> current_frame in
+    let frame = { frame with ip = frame.ip + value } in
+    !vm.frames.(!vm.frames_index - 1) <- frame in
+
+  let jump_current_frame_ip vm ip =
+    let frame = !vm |> current_frame in
+    let frame = { frame with ip } in
+    !vm.frames.(!vm.frames_index - 1) <- frame in
+
   let vm = ref vm in
-  let size_of_instructions = Bytes.length !vm.instructions in
-  while !ip < size_of_instructions do
+  let size_of_instructions vm =
+    Bytes.length (!vm |> current_frame |> Frame.instructions) in
+  while (!vm |> current_frame).ip < (vm |> size_of_instructions) - 1 do
+    move_current_frame_ip vm 1;
+
+    let ip = (!vm |> current_frame).ip in
+    let instructions vm = !vm |> current_frame |> Frame.instructions in
     let op =
-      Bytes.get !vm.instructions !ip |> int_of_char |> Code.OpCode.to_op in
-    (match op with
+      Bytes.get (vm |> instructions) ip |> int_of_char |> Code.OpCode.to_op
+    in
+    match op with
     | Code.OpCode.OpConstant ->
-      let const_index = Bytes.get_uint16_be !vm.instructions (!ip + 1) in
-      vm := push (Array.get !vm.constants const_index) !vm;
-      ip := !ip + 2
+      let const_index = Bytes.get_uint16_be (vm |> instructions) (ip + 1) in
+      move_current_frame_ip vm 2;
+      vm := push (Array.get !vm.constants const_index) !vm
     | OpPop -> pop vm |> ignore
     | OpAdd
     | OpSub
@@ -178,41 +218,41 @@ let run vm =
     | OpMinus -> execute_minus_operator vm
     | OpBang -> execute_bang_operator vm
     | OpJumpNotTruthy ->
-      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
       let pos = Code.read_uint_16 operand in
-      ip := !ip + 2;
+      move_current_frame_ip vm 2;
 
       let condition = pop vm in
       if condition |> is_truthy = false then
-        ip := pos - 1
+        jump_current_frame_ip vm (pos - 1)
     | OpJump ->
-      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
       let pos = Code.read_uint_16 operand in
-      ip := pos - 1
+      jump_current_frame_ip vm (pos - 1)
     | OpNull -> vm := push Object.Null !vm
     | OpGetGlobal ->
-      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
       let global_index = Code.read_uint_16 operand in
-      ip := !ip + 2;
+      move_current_frame_ip vm 2;
       vm := push !vm.globals.(global_index) !vm
     | OpSetGlobal ->
-      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
       let global_index = Code.read_uint_16 operand in
-      ip := !ip + 2;
+      move_current_frame_ip vm 2;
 
       let global_value = pop vm in
       !vm.globals.(global_index) <- global_value
     | OpArray ->
-      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
       let num_elements = Code.read_uint_16 operand in
-      ip := !ip + 2;
+      move_current_frame_ip vm 2;
 
       let array = build_array (!vm.sp - num_elements) !vm.sp !vm in
       vm := push array !vm
     | OpHash ->
-      let operand = Bytes.sub !vm.instructions (!ip + 1) 2 in
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
       let num_elements = Code.read_uint_16 operand in
-      ip := !ip + 2;
+      move_current_frame_ip vm 2;
 
       let hash = build_hash (!vm.sp - num_elements) !vm.sp !vm in
       vm := push hash !vm
@@ -222,7 +262,6 @@ let run vm =
       execute_index_expression vm left index
     | OpCall -> (* FIXME *) ()
     | OpReturnValue -> (* FIXME *) ()
-    | OpReturn -> (* FIXME *) ());
-    ip := !ip + 1
+    | OpReturn -> (* FIXME *) ()
   done;
   !vm

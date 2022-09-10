@@ -143,12 +143,19 @@ let make op operands =
   |> ignore;
   instruction
 
+let read_uint_8 ins = Bytes.get_uint8 ins 0
 let read_uint_16 ins = Bytes.get_uint16_be ins 0
+
+exception Invalid_Operand_Width
 
 let read_operands operands_width ins =
   List.fold_left
     (fun (operands, offset) width ->
-      let arg = ins |> read_uint_16 in
+      let arg =
+        match width with
+        | 2 -> ins |> read_uint_16
+        | 1 -> ins |> read_uint_8
+        | _ -> raise Invalid_Operand_Width in
       (Array.append operands [|arg|], offset + width))
     (Array.make 0 0, 0)
     operands_width

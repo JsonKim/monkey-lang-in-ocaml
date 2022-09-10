@@ -30,21 +30,34 @@ let test_read_operands () =
   let open Alcotest in
   let open Code.OpCode in
   let slice_second_to_last buf = Bytes.sub buf 1 ((buf |> Bytes.length) - 1) in
-  let data = { op = OpConstant; operands = [|65535|]; bytes_read = 2 } in
+  let data =
+    [
+      { op = OpConstant; operands = [|65535|]; bytes_read = 2 };
+      { op = OpGetLocal; operands = [|255|]; bytes_read = 1 };
+    ] in
   check
-    (pair (int |> array) int)
+    (list (pair (int |> array) int))
     "same object"
-    (let code = Code.make data.op (data.operands |> Array.to_list) in
-     Code.read_operands (Code.definitions data.op) (code |> slice_second_to_last))
-    (data.operands, data.bytes_read)
+    (List.map
+       (fun data ->
+         let code = Code.make data.op (data.operands |> Array.to_list) in
+         Code.read_operands (Code.definitions data.op)
+           (code |> slice_second_to_last))
+       data)
+    (List.map (fun data -> (data.operands, data.bytes_read)) data)
 
 let test_instructions_to_string () =
   let open Alcotest in
   let instructinos =
-    [Code.make OpAdd []; Code.make OpConstant [2]; Code.make OpConstant [65534]]
+    [
+      Code.make OpAdd [];
+      Code.make OpGetLocal [1];
+      Code.make OpConstant [2];
+      Code.make OpConstant [65534];
+    ]
     |> concat_bytes in
   check string "same string"
-    "0000 OpAdd\n0001 OpConstant 2\n0004 OpConstant 65534"
+    "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65534"
     (instructinos |> Code.to_string)
 
 let () =

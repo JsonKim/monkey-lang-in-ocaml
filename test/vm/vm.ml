@@ -231,6 +231,27 @@ let test_index_expressions () =
       Object.Null;
     ]
 
+let test_calling_function_without_arguments () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "let fivePlusTen = fn() { 5 + 10; };\nfivePlusTen();";
+       "let one = fn() { 1; };\nlet two = fn() { 2; };\none() + two()";
+       "let a = fn() { 1; };\n\
+        let b = fn() { a() + 1; };\n\
+        let c = fn() { b() + 1; };\n\
+        c();";
+     ]
+    |> List.map parse)
+    [Object.Integer 15; Object.Integer 3; Object.Integer 3]
+
+let test_calling_function_with_return_statements () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    (["let earlyExit = fn() { return 99; 100; };\nearlyExit();"]
+    |> List.map parse)
+    [Object.Integer 99]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -252,4 +273,14 @@ let () =
         [test_case "hash literals test" `Slow test_hash_literals] );
       ( "index expressions test",
         [test_case "index expressions test" `Slow test_index_expressions] );
+      ( "calling function without arguments test",
+        [
+          test_case "calling function without arguments test" `Slow
+            test_calling_function_without_arguments;
+        ] );
+      ( "calling function with return statements",
+        [
+          test_case "calling function with return statements" `Slow
+            test_calling_function_with_return_statements;
+        ] );
     ]

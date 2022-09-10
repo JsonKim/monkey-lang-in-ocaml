@@ -260,8 +260,19 @@ let run vm =
       let index = pop vm in
       let left = pop vm in
       execute_index_expression vm left index
-    | OpCall -> (* FIXME *) ()
-    | OpReturnValue -> (* FIXME *) ()
+    | OpCall ->
+      let fn = !vm.stack.(!vm.sp - 1) in
+      let fn =
+        match fn with
+        | Object.CompiledFunction fn -> fn
+        | _ -> raise Not_Converted in
+      let frame = Frame.make fn in
+      vm := push_frame !vm frame
+    | OpReturnValue ->
+      let return_value = pop vm in
+      vm := !vm |> pop_frame |> fst;
+      vm |> pop |> ignore;
+      vm := push return_value !vm
     | OpReturn -> (* FIXME *) ()
   done;
   !vm

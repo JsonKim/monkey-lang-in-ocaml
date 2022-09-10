@@ -277,5 +277,7 @@ let run vm =
       vm := !vm |> pop_frame |> fst;
       vm |> pop |> ignore;
       vm := push Object.Null !vm
+    | OpGetLocal -> (* FIXME *) ()
+    | OpSetLocal -> (* FIXME *) ()
   done;
   !vm

@@ -12,8 +12,13 @@ let test_make () =
     [
       [|OpConstant |> to_int; 255; 254|] |> to_bytes;
       [|OpAdd |> to_int|] |> to_bytes;
+      [|OpGetLocal |> to_int; 255|] |> to_bytes;
     ]
-    [Code.make OpConstant [65534]; Code.make OpAdd []]
+    [
+      Code.make OpConstant [65534];
+      Code.make OpAdd [];
+      Code.make OpGetLocal [255];
+    ]
 
 type read_operand = {
   op : Code.OpCode.t;

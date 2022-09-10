@@ -245,12 +245,18 @@ let test_calling_function_without_arguments () =
     |> List.map parse)
     [Object.Integer 15; Object.Integer 3; Object.Integer 3]
 
-let test_calling_function_with_return_statements () =
+let test_functions_with_return_statements () =
   let open Alcotest in
   check (list object_testable) "same object"
     (["let earlyExit = fn() { return 99; 100; };\nearlyExit();"]
     |> List.map parse)
     [Object.Integer 99]
+
+let test_functions_without_return_value () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    (["let noReturn = fn() { };\nnoReturn();"] |> List.map parse)
+    [Object.Null]
 
 let () =
   let open Alcotest in
@@ -278,9 +284,14 @@ let () =
           test_case "calling function without arguments test" `Slow
             test_calling_function_without_arguments;
         ] );
-      ( "calling function with return statements",
+      ( "functions with return statements",
         [
-          test_case "calling function with return statements" `Slow
-            test_calling_function_with_return_statements;
+          test_case "functions with return statements" `Slow
+            test_functions_with_return_statements;
+        ] );
+      ( "functions without return value",
+        [
+          test_case "functions without return value" `Slow
+            test_functions_without_return_value;
         ] );
     ]

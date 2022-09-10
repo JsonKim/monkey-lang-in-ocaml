@@ -273,6 +273,9 @@ let run vm =
       vm := !vm |> pop_frame |> fst;
       vm |> pop |> ignore;
       vm := push return_value !vm
-    | OpReturn -> (* FIXME *) ()
+    | OpReturn ->
+      vm := !vm |> pop_frame |> fst;
+      vm |> pop |> ignore;
+      vm := push Object.Null !vm
   done;
   !vm

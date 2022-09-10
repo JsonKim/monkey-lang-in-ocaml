@@ -258,6 +258,17 @@ let test_functions_without_return_value () =
     (["let noReturn = fn() { };\nnoReturn();"] |> List.map parse)
     [Object.Null]
 
+let test_first_class_functions () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "let returnsOne = fn() { 1; };\n\
+        let returnsOneReturner = fn() { returnsOne };\n\
+        returnsOneReturner()()";
+     ]
+    |> List.map parse)
+    [Object.Integer 1]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -293,5 +304,10 @@ let () =
         [
           test_case "functions without return value" `Slow
             test_functions_without_return_value;
+        ] );
+      ( "functions first class functions",
+        [
+          test_case "functions first class functions" `Slow
+            test_first_class_functions;
         ] );
     ]

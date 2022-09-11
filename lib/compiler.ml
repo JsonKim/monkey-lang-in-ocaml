@@ -52,13 +52,21 @@ module Compiler = struct
     let scope = make_scope () in
     let scope_index = c.scope_index + 1 in
     let scopes = Array.append c.scopes [|scope|] in
-    { c with scopes; scope_index }
+    let symbol_table = Symbol_table.make_encloed_symbol_table c.symbol_table in
+    { c with scopes; scope_index; symbol_table }
+
+  exception Outer_Symbol_Table_Is_None
 
   let leave_scope c =
     let scopes = Array.sub c.scopes 0 ((c.scopes |> Array.length) - 1) in
     let scope_index = c.scope_index - 1 in
     (* 원래 구현에서는 pop된 instructions를 리턴 하고 있음 *)
-    { c with scopes; scope_index }
+    let symbol_table =
+      match c.symbol_table.outer with
+      | Some outer -> outer
+      | None -> raise Outer_Symbol_Table_Is_None in
+
+    { c with scopes; scope_index; symbol_table }
 
   let get_current_scope_and_leave_scope c =
     let instructions = current_instructions c in
@@ -150,8 +158,12 @@ module Compiler = struct
       let open Bindings.Result in
       let* c, _ = compile_expression c value in
       let symbol, symbol_table = Symbol_table.define identifier c.symbol_table in
+      let bind_location =
+        match symbol.scope with
+        | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpSetGlobal
+        | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpSetLocal in
       let c = { c with symbol_table } in
-      Ok (emit c Code.OpCode.OpSetGlobal [symbol.index])
+      Ok (emit c bind_location [symbol.index])
     | Ast.ReturnStatement { value } ->
       let open Bindings.Result in
       let+ c, _ = compile_expression c value in
@@ -254,7 +266,12 @@ module Compiler = struct
     | Ast.Identifier identifier -> (
       let symbol = Symbol_table.resolve identifier c.symbol_table in
       match symbol with
-      | Some symbol -> Ok (emit c OpGetGlobal [symbol.index])
+      | Some symbol ->
+        let bind_location =
+          match symbol.scope with
+          | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpGetGlobal
+          | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpGetLocal in
+        Ok (emit c bind_location [symbol.index])
       | None -> Error (Printf.sprintf "undefined variable %s" identifier))
     | Ast.Index { left; index } ->
       let open Bindings.Result in

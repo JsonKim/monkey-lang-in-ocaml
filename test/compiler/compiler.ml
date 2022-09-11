@@ -623,20 +623,27 @@ let test_functions () =
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
 module Scopes = struct
-  let test_scope_index expected_scope_index actual_c () =
+  let symbol_table_testable =
+    Alcotest.testable Symbol_table.pp Symbol_table.equal
+
+  let test_scope expected actual_c () =
     let open Alcotest in
-    check int "same scope_index" expected_scope_index
-      actual_c.Compiler.Compiler.scope_index
+    let open Compiler.Compiler in
+    check
+      (pair int (option symbol_table_testable))
+      "same scope_index" expected
+      (actual_c.scope_index, actual_c.symbol_table.outer)
 
   let run () =
     let open Compiler.Compiler in
     let open Alcotest in
     let compiler = make () in
-    let test_scope_index_before_enter = test_scope_index 0 compiler in
+    let global_symbol_table = Some compiler.symbol_table in
+    let test_scope_index_before_enter = test_scope (0, None) compiler in
 
     let c, _ = emit compiler OpMul [] in
     let c = enter_scope c in
-    let test_scope_after_enter = test_scope_index 1 c in
+    let test_scope_after_enter = test_scope (1, global_symbol_table) c in
 
     let c, _ = emit c OpSub [] in
     let instructions = c.scopes.(c.scope_index).instructions in
@@ -646,7 +653,7 @@ module Scopes = struct
         (instructions |> Code.to_string) in
 
     let c = leave_scope c in
-    let test_scope_index_after_leave = test_scope_index 0 c in
+    let test_scope_index_after_leave = test_scope (0, None) c in
 
     let c, _ = emit c OpAdd [] in
     let instructions = c.scopes.(c.scope_index).instructions in
@@ -765,7 +772,7 @@ let test_let_statement_scopes () =
         };
       Ok
         {
-          instructions = concat_bytes [make OpConstant [1]; make OpPop []];
+          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
           constants =
             [|
               Object.Integer 55;

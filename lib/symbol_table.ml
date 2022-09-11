@@ -1,5 +1,8 @@
 module Symbol_scope = struct
-  type t = GLOBAL [@@deriving show, eq]
+  type t =
+    | GLOBAL
+    | LOCAL
+  [@@deriving show, eq]
 
   let compare a z = compare (a |> show) (z |> show)
 end
@@ -33,21 +36,29 @@ module Store = struct
 end
 
 type t = {
+  outer : t option;
   store : Store.t;
   num_definitions : int;
 }
 [@@deriving show, eq]
 
-let empty = { store = Store.empty; num_definitions = 0 }
+let empty = { outer = None; store = Store.empty; num_definitions = 0 }
+let make_encloed_symbol_table outer = { empty with outer = Some outer }
 
 let define name s =
   let store = s.store in
-  let scope = Symbol_scope.GLOBAL in
+  let scope =
+    match s.outer with
+    | None -> Symbol_scope.GLOBAL
+    | Some _ -> Symbol_scope.LOCAL in
   let index = s.num_definitions in
   let symbol = { Symbol.name; scope; index } in
   let store = store |> Store.add name symbol in
 
   let num_definitions = s.num_definitions + 1 in
-  (symbol, { store; num_definitions })
+  (symbol, { s with store; num_definitions })
 
-let resolve name s = Store.find_opt name s.store
+let rec resolve name s =
+  match Store.find_opt name s.store with
+  | Some symbol -> Some symbol
+  | None -> Option.bind s.outer (fun s -> resolve name s)

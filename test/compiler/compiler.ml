@@ -723,6 +723,75 @@ let test_function_calls () =
     (["fn() { 24 }();"; "let noArg = fn() { 24 };\nnoArg();"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_let_statement_scopes () =
+  let open Alcotest in
+  let open Code in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                make OpConstant [0];
+                make OpSetGlobal [0];
+                make OpConstant [1];
+                make OpPop [];
+              ];
+          constants =
+            [|
+              Object.Integer 55;
+              Object.CompiledFunction
+                (concat_bytes [make OpGetGlobal [0]; make OpReturnValue []]);
+            |];
+        };
+      Ok
+        {
+          instructions = concat_bytes [make OpConstant [1]; make OpPop []];
+          constants =
+            [|
+              Object.Integer 55;
+              Object.CompiledFunction
+                (concat_bytes
+                   [
+                     make OpConstant [0];
+                     make OpSetLocal [0];
+                     make OpGetLocal [0];
+                     make OpReturnValue [];
+                   ]);
+            |];
+        };
+      Ok
+        {
+          instructions = concat_bytes [make OpConstant [1]; make OpPop []];
+          constants =
+            [|
+              Object.Integer 55;
+              Object.Integer 77;
+              Object.CompiledFunction
+                (concat_bytes
+                   [
+                     make OpConstant [0];
+                     make OpSetLocal [0];
+                     make OpConstant [1];
+                     make OpSetLocal [1];
+                     make OpGetLocal [0];
+                     make OpGetLocal [1];
+                     make OpAdd [];
+                     make OpReturnValue [];
+                   ]);
+            |];
+        };
+    ]
+    ([
+       "let num = 55;\nfn() { num }";
+       "fn() {\n  let num = 55;\n  num\n}";
+       "fn() {\n  let a = 55;\n  let b = 77;\n  a + b\n}";
+     ]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Compiler"
@@ -753,4 +822,7 @@ let () =
         ] );
       ( "function calls test",
         [test_case "function calls test" `Slow test_function_calls] );
+      ( "let statments scopes test",
+        [test_case "let statement scopes test" `Slow test_let_statement_scopes]
+      );
     ]

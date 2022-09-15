@@ -263,6 +263,7 @@ let run vm =
       let left = pop vm in
       execute_index_expression vm left index
     | OpCall ->
+      move_current_frame_ip vm 1;
       let fn = !vm.stack.(!vm.sp - 1) in
       let fn =
         match fn with

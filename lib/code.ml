@@ -120,7 +120,7 @@ let definitions =
     | OpArray -> [2]
     | OpHash -> [2]
     | OpIndex -> []
-    | OpCall -> []
+    | OpCall -> [1]
     | OpReturnValue -> []
     | OpReturn -> []
     | OpGetLocal -> [1]

@@ -718,7 +718,7 @@ let test_function_calls () =
       Ok
         {
           instructions =
-            concat_bytes [make OpConstant [1]; make OpCall []; make OpPop []];
+            concat_bytes [make OpConstant [1]; make OpCall [0]; make OpPop []];
           constants =
             [|
               Object.Integer 24;
@@ -738,7 +738,7 @@ let test_function_calls () =
                 make OpConstant [1];
                 make OpSetGlobal [0];
                 make OpGetGlobal [0];
-                make OpCall [];
+                make OpCall [0];
                 make OpPop [];
               ];
           constants =
@@ -752,8 +752,61 @@ let test_function_calls () =
                 };
             |];
         };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                make OpConstant [0];
+                make OpSetGlobal [0];
+                make OpGetGlobal [0];
+                make OpConstant [1];
+                make OpCall [1];
+                make OpPop [];
+              ];
+          constants =
+            [|
+              Object.CompiledFunction
+                {
+                  instructions = concat_bytes [make OpReturn []];
+                  num_locals = 0;
+                };
+              Object.Integer 24;
+            |];
+        };
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                make OpConstant [0];
+                make OpSetGlobal [0];
+                make OpGetGlobal [0];
+                make OpConstant [1];
+                make OpConstant [2];
+                make OpConstant [3];
+                make OpCall [3];
+                make OpPop [];
+              ];
+          constants =
+            [|
+              Object.CompiledFunction
+                {
+                  instructions = concat_bytes [make OpReturn []];
+                  num_locals = 0;
+                };
+              Object.Integer 24;
+              Object.Integer 25;
+              Object.Integer 26;
+            |];
+        };
     ]
-    (["fn() { 24 }();"; "let noArg = fn() { 24 };\nnoArg();"]
+    ([
+       "fn() { 24 }();";
+       "let noArg = fn() { 24 };\nnoArg();";
+       "let oneArg = fn(a) { };\noneArg(24);\n";
+       "let manyArg = fn(a, b, c) { };\nmanyArg(24, 25, 26);\n";
+     ]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
 let test_let_statement_scopes () =

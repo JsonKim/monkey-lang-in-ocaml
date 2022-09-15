@@ -299,10 +299,16 @@ module Compiler = struct
       let c, constant_index = add_constant c compiled_fn in
 
       emit c OpConstant [constant_index]
-    | Ast.Call { fn; arguments = _ } ->
+    | Ast.Call { fn; arguments } ->
       let open Bindings.Result in
-      let+ c, _ = compile_expression c fn in
-      emit c OpCall []
+      let* c, _ = compile_expression c fn in
+      let+ c, _ =
+        List.fold_left
+          (fun result arg ->
+            Result.bind result (fun (c, _) -> compile_expression c arg))
+          (Ok (c, 0))
+          arguments in
+      emit c OpCall [arguments |> List.length]
     | _ -> raise Not_Implemented
 
   let compile c node =

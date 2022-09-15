@@ -768,8 +768,9 @@ let test_function_calls () =
             [|
               Object.CompiledFunction
                 {
-                  instructions = concat_bytes [make OpReturn []];
-                  num_locals = 0;
+                  instructions =
+                    concat_bytes [make OpGetLocal [0]; make OpReturnValue []];
+                  num_locals = 1;
                 };
               Object.Integer 24;
             |];
@@ -792,8 +793,17 @@ let test_function_calls () =
             [|
               Object.CompiledFunction
                 {
-                  instructions = concat_bytes [make OpReturn []];
-                  num_locals = 0;
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpGetLocal [0];
+                        make OpPop [];
+                        make OpGetLocal [1];
+                        make OpPop [];
+                        make OpGetLocal [2];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 3;
                 };
               Object.Integer 24;
               Object.Integer 25;
@@ -804,8 +814,8 @@ let test_function_calls () =
     ([
        "fn() { 24 }();";
        "let noArg = fn() { 24 };\nnoArg();";
-       "let oneArg = fn(a) { };\noneArg(24);\n";
-       "let manyArg = fn(a, b, c) { };\nmanyArg(24, 25, 26);\n";
+       "let oneArg = fn(a) { a };\noneArg(24);\n";
+       "let manyArg = fn(a, b, c) { a; b; c; };\nmanyArg(24, 25, 26);\n";
      ]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 

@@ -278,9 +278,16 @@ module Compiler = struct
       let* c, _ = compile_expression c left in
       let+ c, _ = compile_expression c index in
       emit c OpIndex []
-    | Ast.Function { parameters = _; body } ->
+    | Ast.Function { parameters; body } ->
       let open Bindings.Result in
       let c = enter_scope c in
+
+      let symbol_table =
+        List.fold_left
+          (fun acc p -> Symbol_table.define p acc |> snd)
+          c.symbol_table parameters in
+
+      let c = { c with symbol_table } in
 
       let+ c, _ = compile_statements c body in
 

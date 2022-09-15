@@ -265,9 +265,42 @@ let test_first_class_functions () =
        "let returnsOne = fn() { 1; };\n\
         let returnsOneReturner = fn() { returnsOne };\n\
         returnsOneReturner()()";
+       "let returnsOneReturner = fn() {\n\
+       \  let returnsOne = fn() { 1; };\n\
+       \  returnsOne;\n\
+        }\n\
+        returnsOneReturner()()";
      ]
     |> List.map parse)
-    [Object.Integer 1]
+    [Object.Integer 1; Object.Integer 1]
+
+let test_calling_functions_with_bindings () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "let one = fn() { let one = 1; one };\none();";
+       "let oneAndTwo = fn() { let one = 1; let two = 2; one + two };\n\
+        oneAndTwo();";
+       "let oneAndTwo = fn() { let one = 1; let two = 2; one + two };\n\
+        oneAndTwo();\n\
+        let threeAndFour = fn() { let three = 3; let four = 4; three + four };\n\
+        oneAndTwo() + threeAndFour();";
+       "let firstFoobar = fn() { let foobar = 50; foobar; };\n\
+        let secondFoobar = fn() { let foobar = 100; foobar; };\n\
+        firstFoobar() + secondFoobar();";
+       "let globalSeed = 50;\n\
+        let minusOne = fn() { let num = 1; globalSeed - num };\n\
+        let minusTwo = fn() { let num = 2; globalSeed - num };\n\
+        minusOne() + minusTwo();";
+     ]
+    |> List.map parse)
+    [
+      Object.Integer 1;
+      Object.Integer 3;
+      Object.Integer 10;
+      Object.Integer 150;
+      Object.Integer 97;
+    ]
 
 let () =
   let open Alcotest in
@@ -309,5 +342,10 @@ let () =
         [
           test_case "functions first class functions" `Slow
             test_first_class_functions;
+        ] );
+      ( "calling functions with bindings test",
+        [
+          test_case "calling functions with bindings test" `Slow
+            test_calling_functions_with_bindings;
         ] );
     ]

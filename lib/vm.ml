@@ -26,10 +26,11 @@ let empty_globals = Array.make global_size Object.Null
 let make bytecode =
   let open Compiler.Bytecode in
   let { instructions; constants } = bytecode in
-  let main_fn = instructions in
-  let main_frame = Frame.make main_fn in
+  let main_fn = Object.make_compiled_function instructions in
+  let main_frame = Frame.make main_fn 0 in
 
-  let frames = Array.make max_frames (Frame.make Bytes.empty) in
+  let empty_compiled_function = Object.make_compiled_function Bytes.empty in
+  let frames = Array.make max_frames (Frame.make empty_compiled_function 0) in
   frames.(0) <- main_frame;
 
   let stack = Array.make stack_size Object.Null in
@@ -68,7 +69,8 @@ let push_frame vm f =
 
 let pop_frame vm =
   let frames_index = vm.frames_index - 1 in
-  ({ vm with frames_index }, vm.frames.(vm.frames_index))
+  let frame = vm.frames.(frames_index) in
+  ({ vm with frames_index }, frame)
 
 let execute_binary_integer_operation vm op l r =
   let open Code.OpCode in
@@ -266,18 +268,33 @@ let run vm =
         match fn with
         | Object.CompiledFunction fn -> fn
         | _ -> raise Not_Converted in
-      let frame = Frame.make fn in
-      vm := push_frame !vm frame
+      let frame = Frame.make fn !vm.sp in
+      vm := push_frame !vm frame;
+      vm := { !vm with sp = frame.base_pointer + fn.num_locals }
     | OpReturnValue ->
       let return_value = pop vm in
-      vm := !vm |> pop_frame |> fst;
-      vm |> pop |> ignore;
+      let popped_vm, frame = !vm |> pop_frame in
+      vm := { popped_vm with sp = frame.base_pointer - 1 };
       vm := push return_value !vm
     | OpReturn ->
-      vm := !vm |> pop_frame |> fst;
-      vm |> pop |> ignore;
+      let popped_vm, frame = !vm |> pop_frame in
+      vm := { popped_vm with sp = frame.base_pointer - 1 };
       vm := push Object.Null !vm
-    | OpGetLocal -> (* FIXME *) ()
-    | OpSetLocal -> (* FIXME *) ()
+    | OpGetLocal ->
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 1 in
+      let local_index = Code.read_uint_8 operand in
+      let popped_frame = !vm |> pop_frame in
+      let frame = popped_frame |> snd in
+      let frame = { frame with ip = frame.ip + 1 } in
+      vm := push_frame (fst popped_frame) frame;
+      vm := push !vm.stack.(frame.base_pointer + local_index) !vm
+    | OpSetLocal ->
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 1 in
+      let local_index = Code.read_uint_8 operand in
+      let popped_frame = !vm |> pop_frame in
+      let frame = popped_frame |> snd in
+      let frame = { frame with ip = frame.ip + 1 } in
+      vm := push_frame (fst popped_frame) frame;
+      !vm.stack.(frame.base_pointer + local_index) <- pop vm
   done;
   !vm

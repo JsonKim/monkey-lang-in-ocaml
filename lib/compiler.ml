@@ -293,8 +293,9 @@ module Compiler = struct
         else
           emit c OpReturn [] |> fst in
 
+      let num_locals = c.symbol_table.num_definitions in
       let instructions, c = get_current_scope_and_leave_scope c in
-      let compiled_fn = Object.CompiledFunction instructions in
+      let compiled_fn = Object.CompiledFunction { instructions; num_locals } in
       let c, constant_index = add_constant c compiled_fn in
 
       emit c OpConstant [constant_index]

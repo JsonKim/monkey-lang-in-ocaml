@@ -575,13 +575,17 @@ let test_functions () =
               Object.Integer 5;
               Object.Integer 10;
               Object.CompiledFunction
-                (concat_bytes
-                   [
-                     make OpConstant [0];
-                     make OpConstant [1];
-                     make OpAdd [];
-                     make OpReturnValue [];
-                   ]);
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpConstant [0];
+                        make OpConstant [1];
+                        make OpAdd [];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 0;
+                };
             |];
         };
       Ok
@@ -592,13 +596,17 @@ let test_functions () =
               Object.Integer 5;
               Object.Integer 10;
               Object.CompiledFunction
-                (concat_bytes
-                   [
-                     make OpConstant [0];
-                     make OpConstant [1];
-                     make OpAdd [];
-                     make OpReturnValue [];
-                   ]);
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpConstant [0];
+                        make OpConstant [1];
+                        make OpAdd [];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 0;
+                };
             |];
         };
       Ok
@@ -609,13 +617,17 @@ let test_functions () =
               Object.Integer 1;
               Object.Integer 2;
               Object.CompiledFunction
-                (concat_bytes
-                   [
-                     make OpConstant [0];
-                     make OpPop [];
-                     make OpConstant [1];
-                     make OpReturnValue [];
-                   ]);
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpConstant [0];
+                        make OpPop [];
+                        make OpConstant [1];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 0;
+                };
             |];
         };
     ]
@@ -684,7 +696,13 @@ let test_functions_without_return_value () =
         {
           instructions = concat_bytes [make OpConstant [0]; make OpPop []];
           constants =
-            [|Object.CompiledFunction (concat_bytes [make OpReturn []])|];
+            [|
+              Object.CompiledFunction
+                {
+                  instructions = concat_bytes [make OpReturn []];
+                  num_locals = 0;
+                };
+            |];
         };
     ]
     (["fn() { }"]
@@ -705,7 +723,11 @@ let test_function_calls () =
             [|
               Object.Integer 24;
               Object.CompiledFunction
-                (concat_bytes [make OpConstant [0]; make OpReturnValue []]);
+                {
+                  instructions =
+                    concat_bytes [make OpConstant [0]; make OpReturnValue []];
+                  num_locals = 0;
+                };
             |];
         };
       Ok
@@ -723,7 +745,11 @@ let test_function_calls () =
             [|
               Object.Integer 24;
               Object.CompiledFunction
-                (concat_bytes [make OpConstant [0]; make OpReturnValue []]);
+                {
+                  instructions =
+                    concat_bytes [make OpConstant [0]; make OpReturnValue []];
+                  num_locals = 0;
+                };
             |];
         };
     ]
@@ -751,7 +777,11 @@ let test_let_statement_scopes () =
             [|
               Object.Integer 55;
               Object.CompiledFunction
-                (concat_bytes [make OpGetGlobal [0]; make OpReturnValue []]);
+                {
+                  instructions =
+                    concat_bytes [make OpGetGlobal [0]; make OpReturnValue []];
+                  num_locals = 0;
+                };
             |];
         };
       Ok
@@ -761,13 +791,17 @@ let test_let_statement_scopes () =
             [|
               Object.Integer 55;
               Object.CompiledFunction
-                (concat_bytes
-                   [
-                     make OpConstant [0];
-                     make OpSetLocal [0];
-                     make OpGetLocal [0];
-                     make OpReturnValue [];
-                   ]);
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpConstant [0];
+                        make OpSetLocal [0];
+                        make OpGetLocal [0];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 1;
+                };
             |];
         };
       Ok
@@ -778,17 +812,21 @@ let test_let_statement_scopes () =
               Object.Integer 55;
               Object.Integer 77;
               Object.CompiledFunction
-                (concat_bytes
-                   [
-                     make OpConstant [0];
-                     make OpSetLocal [0];
-                     make OpConstant [1];
-                     make OpSetLocal [1];
-                     make OpGetLocal [0];
-                     make OpGetLocal [1];
-                     make OpAdd [];
-                     make OpReturnValue [];
-                   ]);
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpConstant [0];
+                        make OpSetLocal [0];
+                        make OpConstant [1];
+                        make OpSetLocal [1];
+                        make OpGetLocal [0];
+                        make OpGetLocal [1];
+                        make OpAdd [];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 2;
+                };
             |];
         };
     ]

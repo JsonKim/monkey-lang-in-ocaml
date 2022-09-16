@@ -20,6 +20,13 @@ module CompilationScope = struct
     last_instruction : EmittedInstruction.t option;
     previous_instruction : EmittedInstruction.t option;
   }
+
+  let make () =
+    {
+      instructions = Bytes.empty;
+      last_instruction = None;
+      previous_instruction = None;
+    }
 end
 
 module Compiler = struct
@@ -30,26 +37,18 @@ module Compiler = struct
     scope_index : int;
   }
 
-  let make_scope () =
-    CompilationScope.
-      {
-        instructions = Bytes.empty;
-        last_instruction = None;
-        previous_instruction = None;
-      }
-
   let make () =
     {
       constants = [||];
       symbol_table = Symbol_table.empty;
-      scopes = [|make_scope ()|];
+      scopes = [|CompilationScope.make ()|];
       scope_index = 0;
     }
 
   let current_instructions c = c.scopes.(c.scope_index).instructions
 
   let enter_scope c =
-    let scope = make_scope () in
+    let scope = CompilationScope.make () in
     let scope_index = c.scope_index + 1 in
     let scopes = Array.append c.scopes [|scope|] in
     let symbol_table = Symbol_table.make_encloed_symbol_table c.symbol_table in

@@ -19,11 +19,11 @@ let test_define () =
      let a, global = global |> define "a" in
      let b, global = global |> define "b" in
 
-     let first_local = make_encloed_symbol_table global in
+     let first_local = make_enclosed_symbol_table global in
      let c, first_local = first_local |> define "c" in
      let d, first_local = first_local |> define "d" in
 
-     let second_local = make_encloed_symbol_table first_local in
+     let second_local = make_enclosed_symbol_table first_local in
      let e, second_local = second_local |> define "e" in
      let f, _ = second_local |> define "f" in
      [a; b; c; d; e; f])
@@ -55,7 +55,7 @@ let test_resolve_local () =
     ]
     (let global = empty |> define "a" |> snd |> define "b" |> snd in
      let local =
-       make_encloed_symbol_table global
+       make_enclosed_symbol_table global
        |> define "c"
        |> snd
        |> define "d"
@@ -85,13 +85,13 @@ let test_resolve_nested_local () =
     ]
     (let global = empty |> define "a" |> snd |> define "b" |> snd in
      let first_local =
-       make_encloed_symbol_table global
+       make_enclosed_symbol_table global
        |> define "c"
        |> snd
        |> define "d"
        |> snd in
      let second_local =
-       make_encloed_symbol_table first_local
+       make_enclosed_symbol_table first_local
        |> define "e"
        |> snd
        |> define "f"

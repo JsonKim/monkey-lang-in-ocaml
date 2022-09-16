@@ -51,7 +51,7 @@ module Compiler = struct
     let scope = CompilationScope.make () in
     let scope_index = c.scope_index + 1 in
     let scopes = Array.append c.scopes [|scope|] in
-    let symbol_table = Symbol_table.make_encloed_symbol_table c.symbol_table in
+    let symbol_table = Symbol_table.make_enclosed_symbol_table c.symbol_table in
     { c with scopes; scope_index; symbol_table }
 
   exception Outer_Symbol_Table_Is_None

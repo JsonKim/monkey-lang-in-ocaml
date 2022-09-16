@@ -43,7 +43,7 @@ type t = {
 [@@deriving show, eq]
 
 let empty = { outer = None; store = Store.empty; num_definitions = 0 }
-let make_encloed_symbol_table outer = { empty with outer = Some outer }
+let make_enclosed_symbol_table outer = { empty with outer = Some outer }
 
 let define name s =
   let store = s.store in

@@ -19,6 +19,10 @@ let parse input =
     | None -> raise Compile_Failed)
   | Error _ -> raise Compile_Failed
 
+let parse_with_vm_error input =
+  try parse input with
+  | Vm.VM_Error message -> Object.Error message
+
 let hash_to_list obj =
   match obj with
   | Object.Hash hash -> hash |> Object.Hash.to_seq |> List.of_seq
@@ -290,7 +294,7 @@ let test_calling_functions_with_bindings () =
        \  let c = a + b;\n\
        \  c;\n\
         };\n\
-        let outer = fn(a, b) {\n\
+        let outer = fn() {\n\
        \  sum(1, 2) + sum(3, 4);\n\
         };\n\
         outer();";
@@ -340,6 +344,17 @@ let test_calling_functions_with_arguments_and_bindings () =
       Object.Integer 10;
       Object.Integer 150;
       Object.Integer 97;
+    ]
+
+let test_calling_functions_with_wrong_arguments () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    (["fn() { 1; }(1);"; "fn(a) { a; }();"; "fn(a, b) { a + b; }(1);"]
+    |> List.map parse_with_vm_error)
+    [
+      Object.Error "wrong number of argements: want=1, got=0";
+      Object.Error "wrong number of argements: want=0, got=1";
+      Object.Error "wrong number of argements: want=1, got=2";
     ]
 
 let () =
@@ -392,5 +407,10 @@ let () =
         [
           test_case "calling functions with arguments and bindings test" `Slow
             test_calling_functions_with_arguments_and_bindings;
+        ] );
+      ( "calling functions with wrong arguments",
+        [
+          test_case "calling functions with wrong arguments" `Slow
+            test_calling_functions_with_wrong_arguments;
         ] );
     ]

@@ -302,7 +302,10 @@ module Compiler = struct
 
       let num_locals = c.symbol_table.num_definitions in
       let instructions, c = get_current_scope_and_leave_scope c in
-      let compiled_fn = Object.CompiledFunction { instructions; num_locals } in
+      let compiled_fn =
+        Object.CompiledFunction
+          { instructions; num_locals; num_parameters = List.length parameters }
+      in
       let c, constant_index = add_constant c compiled_fn in
 
       emit c OpConstant [constant_index]

@@ -3,10 +3,12 @@ module Hash = Map.Make (String)
 type compiledFunction = {
   instructions : Code.instructions;
   num_locals : int;
+  num_parameters : int;
 }
 [@@deriving show, eq]
 
-let make_compiled_function instructions = { instructions; num_locals = 0 }
+let make_compiled_function instructions =
+  { instructions; num_locals = 0; num_parameters = 0 }
 
 type t =
   | Integer          of int

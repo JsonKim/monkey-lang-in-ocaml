@@ -178,15 +178,23 @@ let build_hash strat_index end_index vm =
   done;
   Object.Hash !hash
 
+exception VM_Error of string
+
 let call_function num_args vm =
   let fn = !vm.stack.(!vm.sp - 1 - num_args) in
   let fn =
     match fn with
     | Object.CompiledFunction fn -> fn
     | _ -> raise Not_Converted in
-  let frame = Frame.make fn (!vm.sp - num_args) in
-  vm := push_frame !vm frame;
-  vm := { !vm with sp = frame.base_pointer + fn.num_locals }
+  if num_args != fn.num_parameters then
+    let error =
+      Printf.sprintf "wrong number of argements: want=%d, got=%d" num_args
+        fn.num_parameters in
+    raise (VM_Error error)
+  else
+    let frame = Frame.make fn (!vm.sp - num_args) in
+    vm := push_frame !vm frame;
+    vm := { !vm with sp = frame.base_pointer + fn.num_locals }
 
 let run vm =
   let move_current_frame_ip vm value =

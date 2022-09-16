@@ -585,6 +585,7 @@ let test_functions () =
                         make OpReturnValue [];
                       ];
                   num_locals = 0;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -606,6 +607,7 @@ let test_functions () =
                         make OpReturnValue [];
                       ];
                   num_locals = 0;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -627,6 +629,7 @@ let test_functions () =
                         make OpReturnValue [];
                       ];
                   num_locals = 0;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -701,6 +704,7 @@ let test_functions_without_return_value () =
                 {
                   instructions = concat_bytes [make OpReturn []];
                   num_locals = 0;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -727,6 +731,7 @@ let test_function_calls () =
                   instructions =
                     concat_bytes [make OpConstant [0]; make OpReturnValue []];
                   num_locals = 0;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -749,6 +754,7 @@ let test_function_calls () =
                   instructions =
                     concat_bytes [make OpConstant [0]; make OpReturnValue []];
                   num_locals = 0;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -771,6 +777,7 @@ let test_function_calls () =
                   instructions =
                     concat_bytes [make OpGetLocal [0]; make OpReturnValue []];
                   num_locals = 1;
+                  num_parameters = 1;
                 };
               Object.Integer 24;
             |];
@@ -804,6 +811,7 @@ let test_function_calls () =
                         make OpReturnValue [];
                       ];
                   num_locals = 3;
+                  num_parameters = 3;
                 };
               Object.Integer 24;
               Object.Integer 25;
@@ -844,6 +852,7 @@ let test_let_statement_scopes () =
                   instructions =
                     concat_bytes [make OpGetGlobal [0]; make OpReturnValue []];
                   num_locals = 0;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -864,6 +873,7 @@ let test_let_statement_scopes () =
                         make OpReturnValue [];
                       ];
                   num_locals = 1;
+                  num_parameters = 0;
                 };
             |];
         };
@@ -889,6 +899,7 @@ let test_let_statement_scopes () =
                         make OpReturnValue [];
                       ];
                   num_locals = 2;
+                  num_parameters = 0;
                 };
             |];
         };

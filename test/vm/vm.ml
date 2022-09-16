@@ -278,6 +278,46 @@ let test_calling_functions_with_bindings () =
   let open Alcotest in
   check (list object_testable) "same object"
     ([
+       "let identity = fn(a) { a };\nidentity(4);";
+       "let sum = fn(a, b) { a + b; };\nsum(1, 2);";
+       "let sum = fn(a, b) {\n  let c = a + b;\n  c;\n};\nsum(1, 2);";
+       "let sum = fn(a, b) {\n\
+       \  let c = a + b;\n\
+       \  c;\n\
+        };\n\
+        sum(1, 2) + sum(3, 4);";
+       "let sum = fn(a, b) {\n\
+       \  let c = a + b;\n\
+       \  c;\n\
+        };\n\
+        let outer = fn(a, b) {\n\
+       \  sum(1, 2) + sum(3, 4);\n\
+        };\n\
+        outer();";
+       "let globalNum = 10\n\n\
+        let sum = fn(a, b) {\n\
+       \  let c = a + b;\n\
+       \  c + globalNum;\n\
+        };\n\n\
+        let outer = fn() {\n\
+       \  sum(1, 2) + sum(3, 4) + globalNum;\n\
+        };\n\n\
+        outer() + globalNum;";
+     ]
+    |> List.map parse)
+    [
+      Object.Integer 4;
+      Object.Integer 3;
+      Object.Integer 3;
+      Object.Integer 10;
+      Object.Integer 10;
+      Object.Integer 50;
+    ]
+
+let test_calling_functions_with_arguments_and_bindings () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
        "let one = fn() { let one = 1; one };\none();";
        "let oneAndTwo = fn() { let one = 1; let two = 2; one + two };\n\
         oneAndTwo();";
@@ -347,5 +387,10 @@ let () =
         [
           test_case "calling functions with bindings test" `Slow
             test_calling_functions_with_bindings;
+        ] );
+      ( "calling functions with arguments and bindings test",
+        [
+          test_case "calling functions with arguments and bindings test" `Slow
+            test_calling_functions_with_arguments_and_bindings;
         ] );
     ]

@@ -178,6 +178,16 @@ let build_hash strat_index end_index vm =
   done;
   Object.Hash !hash
 
+let call_function num_args vm =
+  let fn = !vm.stack.(!vm.sp - 1 - num_args) in
+  let fn =
+    match fn with
+    | Object.CompiledFunction fn -> fn
+    | _ -> raise Not_Converted in
+  let frame = Frame.make fn (!vm.sp - num_args) in
+  vm := push_frame !vm frame;
+  vm := { !vm with sp = frame.base_pointer + fn.num_locals }
+
 let run vm =
   let move_current_frame_ip vm value =
     let frame = !vm |> current_frame in
@@ -263,15 +273,11 @@ let run vm =
       let left = pop vm in
       execute_index_expression vm left index
     | OpCall ->
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 1 in
+      let num_args = Code.read_uint_8 operand in
       move_current_frame_ip vm 1;
-      let fn = !vm.stack.(!vm.sp - 1) in
-      let fn =
-        match fn with
-        | Object.CompiledFunction fn -> fn
-        | _ -> raise Not_Converted in
-      let frame = Frame.make fn !vm.sp in
-      vm := push_frame !vm frame;
-      vm := { !vm with sp = frame.base_pointer + fn.num_locals }
+
+      call_function num_args vm
     | OpReturnValue ->
       let return_value = pop vm in
       let popped_vm, frame = !vm |> pop_frame in

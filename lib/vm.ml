@@ -290,18 +290,16 @@ let run vm =
     | OpGetLocal ->
       let operand = Bytes.sub (vm |> instructions) (ip + 1) 1 in
       let local_index = Code.read_uint_8 operand in
-      let popped_frame = !vm |> pop_frame in
-      let frame = popped_frame |> snd in
-      let frame = { frame with ip = frame.ip + 1 } in
-      vm := push_frame (fst popped_frame) frame;
+
+      move_current_frame_ip vm 1;
+      let frame = !vm |> current_frame in
       vm := push !vm.stack.(frame.base_pointer + local_index) !vm
     | OpSetLocal ->
       let operand = Bytes.sub (vm |> instructions) (ip + 1) 1 in
       let local_index = Code.read_uint_8 operand in
-      let popped_frame = !vm |> pop_frame in
-      let frame = popped_frame |> snd in
-      let frame = { frame with ip = frame.ip + 1 } in
-      vm := push_frame (fst popped_frame) frame;
+
+      move_current_frame_ip vm 1;
+      let frame = !vm |> current_frame in
       !vm.stack.(frame.base_pointer + local_index) <- pop vm
   done;
   !vm

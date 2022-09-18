@@ -1,4 +1,12 @@
-module Builtin = Map.Make (String)
+module Builtin = struct
+  type t
+
+  let empty = []
+  let add name fn builtins = (name, fn) :: builtins
+
+  let find_opt name builtins =
+    builtins |> List.find_opt (fun (n, _) -> n = name) |> Option.map snd
+end
 
 let len args =
   match args with
@@ -73,8 +81,8 @@ let rec puts args =
 let fns =
   Builtin.empty
   |> Builtin.add "len" (Object.Builtin { fn = len })
+  |> Builtin.add "puts" (Object.Builtin { fn = puts })
   |> Builtin.add "first" (Object.Builtin { fn = first })
   |> Builtin.add "last" (Object.Builtin { fn = last })
   |> Builtin.add "rest" (Object.Builtin { fn = rest })
   |> Builtin.add "push" (Object.Builtin { fn = push })
-  |> Builtin.add "puts" (Object.Builtin { fn = puts })

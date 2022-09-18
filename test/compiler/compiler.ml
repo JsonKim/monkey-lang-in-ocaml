@@ -911,6 +911,54 @@ let test_let_statement_scopes () =
      ]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_builtins () =
+  let open Alcotest in
+  let open Code in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          instructions =
+            concat_bytes
+              [
+                make OpGetBuiltin [0];
+                make OpArray [0];
+                make OpCall [1];
+                make OpPop [];
+                make OpGetBuiltin [5];
+                make OpArray [0];
+                make OpConstant [0];
+                make OpCall [2];
+                make OpPop [];
+              ];
+          constants = [|Object.Integer 1|];
+        };
+      Ok
+        {
+          instructions = concat_bytes [make OpConstant [0]; make OpPop []];
+          constants =
+            [|
+              Object.CompiledFunction
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpGetBuiltin [0];
+                        make OpArray [0];
+                        make OpCall [1];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 0;
+                  num_parameters = 0;
+                };
+            |];
+        };
+    ]
+    (["len([]);\npush([], 1);"; "fn() { len([]); }"]
+    |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
+
 let () =
   let open Alcotest in
   run "Compiler"
@@ -944,4 +992,5 @@ let () =
       ( "let statments scopes test",
         [test_case "let statement scopes test" `Slow test_let_statement_scopes]
       );
+      ("builtins test", [test_case "builtins test" `Slow test_builtins]);
     ]

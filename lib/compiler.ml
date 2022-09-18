@@ -38,9 +38,16 @@ module Compiler = struct
   }
 
   let make () =
+    let symbol_table = Symbol_table.empty in
+    let _, symbol_table =
+      List.fold_right
+        (fun (name, _) (index, st) ->
+          let st = Symbol_table.define_builtin index name st |> snd in
+          (index + 1, st))
+        Builtins.fns (0, symbol_table) in
     {
       constants = [||];
-      symbol_table = Symbol_table.empty;
+      symbol_table;
       scopes = [|CompilationScope.make ()|];
       scope_index = 0;
     }
@@ -160,7 +167,9 @@ module Compiler = struct
       let bind_location =
         match symbol.scope with
         | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpSetGlobal
-        | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpSetLocal in
+        | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpSetLocal
+        (* 실제로 let에서 BUILTIN이 사용되지는 않음 *)
+        | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpSetLocal in
       let c = { c with symbol_table } in
       Ok (emit c bind_location [symbol.index])
     | Ast.ReturnStatement { value } ->
@@ -269,7 +278,8 @@ module Compiler = struct
         let bind_location =
           match symbol.scope with
           | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpGetGlobal
-          | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpGetLocal in
+          | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpGetLocal
+          | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpGetBuiltin in
         Ok (emit c bind_location [symbol.index])
       | None -> Error (Printf.sprintf "undefined variable %s" identifier))
     | Ast.Index { left; index } ->

@@ -309,5 +309,6 @@ let run vm =
       move_current_frame_ip vm 1;
       let frame = !vm |> current_frame in
       !vm.stack.(frame.base_pointer + local_index) <- pop vm
+    | OpGetBuiltin -> (* FIXME *) ()
   done;
   !vm

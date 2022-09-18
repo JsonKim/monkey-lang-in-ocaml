@@ -31,6 +31,7 @@ module OpCode = struct
     | OpReturn
     | OpGetLocal
     | OpSetLocal
+    | OpGetBuiltin
   [@@deriving show { with_path = false }]
 
   let to_int = function
@@ -60,6 +61,7 @@ module OpCode = struct
     | OpReturn -> 23
     | OpGetLocal -> 24
     | OpSetLocal -> 25
+    | OpGetBuiltin -> 26
 
   let to_op = function
     | 0 -> OpConstant
@@ -88,6 +90,7 @@ module OpCode = struct
     | 23 -> OpReturn
     | 24 -> OpGetLocal
     | 25 -> OpSetLocal
+    | 26 -> OpGetBuiltin
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -124,7 +127,8 @@ let definitions =
     | OpReturnValue -> []
     | OpReturn -> []
     | OpGetLocal -> [1]
-    | OpSetLocal -> [1])
+    | OpSetLocal -> [1]
+    | OpGetBuiltin -> [1])
 
 let make op operands =
   let operand_widths = definitions op in

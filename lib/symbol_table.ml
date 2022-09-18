@@ -2,6 +2,7 @@ module Symbol_scope = struct
   type t =
     | GLOBAL
     | LOCAL
+    | BUILTIN
   [@@deriving show, eq]
 
   let compare a z = compare (a |> show) (z |> show)
@@ -62,3 +63,8 @@ let rec resolve name s =
   match Store.find_opt name s.store with
   | Some symbol -> Some symbol
   | None -> Option.bind s.outer (fun s -> resolve name s)
+
+let define_builtin index name s =
+  let symbol = { Symbol.name; index; scope = BUILTIN } in
+  let store = s.store |> Store.add name symbol in
+  (symbol, { s with store })

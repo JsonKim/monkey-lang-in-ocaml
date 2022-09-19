@@ -67,4 +67,10 @@ let run () =
   let macro_env = Environment.make () in
   let constants = [||] in
   let symbol_table = Symbol_table.empty in
+  let _, symbol_table =
+    Array.fold_left
+      (fun (index, st) (name, _) ->
+        let st = Symbol_table.define_builtin index name st |> snd in
+        (index + 1, st))
+      (0, symbol_table) Builtins.fns in
   go env macro_env constants symbol_table

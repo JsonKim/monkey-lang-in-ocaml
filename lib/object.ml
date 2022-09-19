@@ -21,13 +21,16 @@ type t =
       body : Ast.blockStatement;
       env : t Environment.t;
     }
-  | Builtin          of { fn : t list -> t [@equal fun _ _ -> false] }
+  | Builtin          of builtin
   | Array            of t list
   | Hash             of (hash_pair Hash.t[@opaque])
   | Quote            of Ast.expression
   | Macro            of macro
   | Error            of string
   | CompiledFunction of compiledFunction
+[@@deriving show, eq]
+
+and builtin = { fn : t list -> t [@equal fun _ _ -> false] }
 [@@deriving show, eq]
 
 and macro = {

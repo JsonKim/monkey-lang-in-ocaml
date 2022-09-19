@@ -1,11 +1,11 @@
 module Builtin = struct
   type t
 
-  let empty = []
-  let add name fn builtins = (name, fn) :: builtins
+  let empty = [||]
+  let add name fn builtins = Array.append builtins [|(name, fn)|]
 
   let find_opt name builtins =
-    builtins |> List.find_opt (fun (n, _) -> n = name) |> Option.map snd
+    builtins |> Array.find_opt (fun (n, _) -> n = name) |> Option.map snd
 end
 
 let len args =
@@ -49,6 +49,7 @@ let last args =
 
 let rest args =
   match args with
+  | [Object.Array []] -> Object.Null
   | [Object.Array arr] -> Object.Array (arr |> List.tl)
   | [arg] ->
     Object.Error

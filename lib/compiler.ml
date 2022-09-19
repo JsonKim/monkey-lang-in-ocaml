@@ -40,11 +40,11 @@ module Compiler = struct
   let make () =
     let symbol_table = Symbol_table.empty in
     let _, symbol_table =
-      List.fold_right
-        (fun (name, _) (index, st) ->
+      Array.fold_left
+        (fun (index, st) (name, _) ->
           let st = Symbol_table.define_builtin index name st |> snd in
           (index + 1, st))
-        Builtins.fns (0, symbol_table) in
+        (0, symbol_table) Builtins.fns in
     {
       constants = [||];
       symbol_table;

@@ -180,13 +180,8 @@ let build_hash strat_index end_index vm =
 
 exception VM_Error of string
 
-let call_function num_args vm =
-  let fn = !vm.stack.(!vm.sp - 1 - num_args) in
-  let fn =
-    match fn with
-    | Object.CompiledFunction fn -> fn
-    | _ -> raise Not_Converted in
-  if num_args != fn.num_parameters then
+let call_function fn num_args vm =
+  if num_args != fn.Object.num_parameters then
     let error =
       Printf.sprintf "wrong number of argements: want=%d, got=%d" num_args
         fn.num_parameters in
@@ -195,6 +190,19 @@ let call_function num_args vm =
     let frame = Frame.make fn (!vm.sp - num_args) in
     vm := push_frame !vm frame;
     vm := { !vm with sp = frame.base_pointer + fn.num_locals }
+
+let call_builtin builtin num_args vm =
+  let args = Array.sub !vm.stack (!vm.sp - num_args) num_args in
+  let result = builtin.Object.fn (args |> Array.to_list) in
+  vm := { !vm with sp = !vm.sp - num_args - 1 };
+  vm := push result !vm
+
+let execute_call num_args vm =
+  let callee = !vm.stack.(!vm.sp - 1 - num_args) in
+  match callee with
+  | Object.CompiledFunction fn -> call_function fn num_args vm
+  | Object.Builtin fn -> call_builtin fn num_args vm
+  | _ -> raise (VM_Error "calling non-function and non-built-in")
 
 let run vm =
   let move_current_frame_ip vm value =
@@ -268,6 +276,7 @@ let run vm =
       move_current_frame_ip vm 2;
 
       let array = build_array (!vm.sp - num_elements) !vm.sp !vm in
+      vm := { !vm with sp = !vm.sp - num_elements };
       vm := push array !vm
     | OpHash ->
       let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
@@ -285,7 +294,7 @@ let run vm =
       let num_args = Code.read_uint_8 operand in
       move_current_frame_ip vm 1;
 
-      call_function num_args vm
+      execute_call num_args vm
     | OpReturnValue ->
       let return_value = pop vm in
       let popped_vm, frame = !vm |> pop_frame in
@@ -309,6 +318,12 @@ let run vm =
       move_current_frame_ip vm 1;
       let frame = !vm |> current_frame in
       !vm.stack.(frame.base_pointer + local_index) <- pop vm
-    | OpGetBuiltin -> (* FIXME *) ()
+    | OpGetBuiltin ->
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 1 in
+      let builtin_index = Code.read_uint_8 operand in
+      move_current_frame_ip vm 1;
+
+      let definition = Builtins.fns.(builtin_index) |> snd in
+      vm := push definition !vm
   done;
   !vm

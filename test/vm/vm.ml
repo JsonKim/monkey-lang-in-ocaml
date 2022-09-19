@@ -357,6 +357,53 @@ let test_calling_functions_with_wrong_arguments () =
       Object.Error "wrong number of argements: want=1, got=2";
     ]
 
+let test_builtin_functions () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "len(\"\")";
+       "len(\"four\")";
+       "len(\"hello world\")";
+       "len(1)";
+       "len(\"one\", \"two\")";
+       "len([4, 5, 6])";
+       "len([])";
+       "puts(\"hello\", \"world!\")";
+       "first([1, 2, 3])";
+       "first([])";
+       "first(1)";
+       "first([1, 2, 3])";
+       "last([1, 2, 3])";
+       "last([])";
+       "last(1)";
+       "rest([1, 2, 3])";
+       "rest([])";
+       "push([], 1)";
+       "push(1, 1)";
+     ]
+    |> List.map parse_with_vm_error)
+    [
+      Object.Integer 0;
+      Object.Integer 4;
+      Object.Integer 11;
+      Object.Error "argument to len not supported, got Integer";
+      Object.Error "wrong number of arguments. got=2, want=1";
+      Object.Integer 3;
+      Object.Integer 0;
+      Object.Null;
+      Object.Integer 1;
+      Object.Null;
+      Object.Error "argument to first must be Array, got Integer";
+      Object.Integer 1;
+      Object.Integer 3;
+      Object.Null;
+      Object.Error "argument to last must be Array, got Integer";
+      Object.Array [Object.Integer 2; Object.Integer 3];
+      Object.Null;
+      Object.Array [Object.Integer 1];
+      Object.Error "argument to rest must be Array, got Integer";
+    ]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -413,4 +460,6 @@ let () =
           test_case "calling functions with wrong arguments" `Slow
             test_calling_functions_with_wrong_arguments;
         ] );
+      ( "builtin functions test",
+        [test_case "builtin functions test" `Slow test_builtin_functions] );
     ]

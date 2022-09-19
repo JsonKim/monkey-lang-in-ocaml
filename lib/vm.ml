@@ -27,10 +27,13 @@ let make bytecode =
   let open Compiler.Bytecode in
   let { instructions; constants } = bytecode in
   let main_fn = Object.make_compiled_function instructions in
-  let main_frame = Frame.make main_fn 0 in
+  let main_closure = { Object.compiled_fn = main_fn; free = [] } in
+  let main_frame = Frame.make main_closure 0 in
 
   let empty_compiled_function = Object.make_compiled_function Bytes.empty in
-  let frames = Array.make max_frames (Frame.make empty_compiled_function 0) in
+  let empty_closure =
+    { Object.compiled_fn = empty_compiled_function; free = [] } in
+  let frames = Array.make max_frames (Frame.make empty_closure 0) in
   frames.(0) <- main_frame;
 
   let stack = Array.make stack_size Object.Null in
@@ -180,16 +183,17 @@ let build_hash strat_index end_index vm =
 
 exception VM_Error of string
 
-let call_function fn num_args vm =
-  if num_args != fn.Object.num_parameters then
+let call_closure cl num_args vm =
+  let num_parameters = cl.Object.compiled_fn.num_parameters in
+  if num_args != num_parameters then
     let error =
       Printf.sprintf "wrong number of argements: want=%d, got=%d" num_args
-        fn.num_parameters in
+        num_parameters in
     raise (VM_Error error)
   else
-    let frame = Frame.make fn (!vm.sp - num_args) in
+    let frame = Frame.make cl (!vm.sp - num_args) in
     vm := push_frame !vm frame;
-    vm := { !vm with sp = frame.base_pointer + fn.num_locals }
+    vm := { !vm with sp = frame.base_pointer + cl.compiled_fn.num_locals }
 
 let call_builtin builtin num_args vm =
   let args = Array.sub !vm.stack (!vm.sp - num_args) num_args in
@@ -200,9 +204,18 @@ let call_builtin builtin num_args vm =
 let execute_call num_args vm =
   let callee = !vm.stack.(!vm.sp - 1 - num_args) in
   match callee with
-  | Object.CompiledFunction fn -> call_function fn num_args vm
+  | Object.Closure cl -> call_closure cl num_args vm
   | Object.Builtin fn -> call_builtin fn num_args vm
   | _ -> raise (VM_Error "calling non-function and non-built-in")
+
+let push_closure const_index vm =
+  let constant = !vm.constants.(const_index) in
+  let fn =
+    match constant with
+    | Object.CompiledFunction fn -> fn
+    | _ -> raise (VM_Error ("not a function: " ^ Object.show constant)) in
+  let closure = Object.Closure { compiled_fn = fn; free = [] } in
+  vm := push closure !vm
 
 let run vm =
   let move_current_frame_ip vm value =
@@ -325,6 +338,12 @@ let run vm =
 
       let definition = Builtins.fns.(builtin_index) |> snd in
       vm := push definition !vm
-    | OpClosure -> (* FIXME *) ()
+    | OpClosure ->
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
+      let const_index = Code.read_uint_16 operand in
+      let operand = Bytes.sub (vm |> instructions) (ip + 3) 1 in
+      let _ = Code.read_uint_8 operand in
+      move_current_frame_ip vm 3;
+      push_closure const_index vm
   done;
   !vm

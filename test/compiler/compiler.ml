@@ -569,7 +569,7 @@ let test_functions () =
     [
       Ok
         {
-          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
+          instructions = concat_bytes [make OpClosure [2; 0]; make OpPop []];
           constants =
             [|
               Object.Integer 5;
@@ -591,7 +591,7 @@ let test_functions () =
         };
       Ok
         {
-          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
+          instructions = concat_bytes [make OpClosure [2; 0]; make OpPop []];
           constants =
             [|
               Object.Integer 5;
@@ -613,7 +613,7 @@ let test_functions () =
         };
       Ok
         {
-          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
+          instructions = concat_bytes [make OpClosure [2; 0]; make OpPop []];
           constants =
             [|
               Object.Integer 1;
@@ -697,7 +697,7 @@ let test_functions_without_return_value () =
     [
       Ok
         {
-          instructions = concat_bytes [make OpConstant [0]; make OpPop []];
+          instructions = concat_bytes [make OpClosure [0; 0]; make OpPop []];
           constants =
             [|
               Object.CompiledFunction
@@ -722,7 +722,7 @@ let test_function_calls () =
       Ok
         {
           instructions =
-            concat_bytes [make OpConstant [1]; make OpCall [0]; make OpPop []];
+            concat_bytes [make OpClosure [1; 0]; make OpCall [0]; make OpPop []];
           constants =
             [|
               Object.Integer 24;
@@ -740,7 +740,7 @@ let test_function_calls () =
           instructions =
             concat_bytes
               [
-                make OpConstant [1];
+                make OpClosure [1; 0];
                 make OpSetGlobal [0];
                 make OpGetGlobal [0];
                 make OpCall [0];
@@ -763,7 +763,7 @@ let test_function_calls () =
           instructions =
             concat_bytes
               [
-                make OpConstant [0];
+                make OpClosure [0; 0];
                 make OpSetGlobal [0];
                 make OpGetGlobal [0];
                 make OpConstant [1];
@@ -787,7 +787,7 @@ let test_function_calls () =
           instructions =
             concat_bytes
               [
-                make OpConstant [0];
+                make OpClosure [0; 0];
                 make OpSetGlobal [0];
                 make OpGetGlobal [0];
                 make OpConstant [1];
@@ -841,7 +841,7 @@ let test_let_statement_scopes () =
               [
                 make OpConstant [0];
                 make OpSetGlobal [0];
-                make OpConstant [1];
+                make OpClosure [1; 0];
                 make OpPop [];
               ];
           constants =
@@ -858,7 +858,7 @@ let test_let_statement_scopes () =
         };
       Ok
         {
-          instructions = concat_bytes [make OpConstant [1]; make OpPop []];
+          instructions = concat_bytes [make OpClosure [1; 0]; make OpPop []];
           constants =
             [|
               Object.Integer 55;
@@ -879,7 +879,7 @@ let test_let_statement_scopes () =
         };
       Ok
         {
-          instructions = concat_bytes [make OpConstant [2]; make OpPop []];
+          instructions = concat_bytes [make OpClosure [2; 0]; make OpPop []];
           constants =
             [|
               Object.Integer 55;
@@ -937,7 +937,7 @@ let test_builtins () =
         };
       Ok
         {
-          instructions = concat_bytes [make OpConstant [0]; make OpPop []];
+          instructions = concat_bytes [make OpClosure [0; 0]; make OpPop []];
           constants =
             [|
               Object.CompiledFunction

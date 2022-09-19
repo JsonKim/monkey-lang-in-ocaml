@@ -36,7 +36,7 @@ and builtin = { fn : t list -> t [@equal fun _ _ -> false] }
 
 and closure = {
   compiled_fn : compiledFunction;
-  free : t array;
+  free : t list;
 }
 [@@deriving show, eq]
 

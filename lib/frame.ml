@@ -1,8 +1,8 @@
 type t = {
-  fn : Object.compiledFunction;
+  cl : Object.closure;
   ip : int;
   base_pointer : int;
 }
 
-let make fn base_pointer = { fn; ip = -1; base_pointer }
-let instructions f = f.fn.instructions
+let make cl base_pointer = { cl; ip = -1; base_pointer }
+let instructions f = f.cl.Object.compiled_fn.instructions

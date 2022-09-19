@@ -317,7 +317,7 @@ module Compiler = struct
       in
       let c, constant_index = add_constant c compiled_fn in
 
-      emit c OpConstant [constant_index]
+      emit c OpClosure [constant_index; 0]
     | Ast.Call { fn; arguments } ->
       let open Bindings.Result in
       let* c, _ = compile_expression c fn in

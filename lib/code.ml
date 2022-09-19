@@ -32,6 +32,7 @@ module OpCode = struct
     | OpGetLocal
     | OpSetLocal
     | OpGetBuiltin
+    | OpClosure
   [@@deriving show { with_path = false }]
 
   let to_int = function
@@ -62,6 +63,7 @@ module OpCode = struct
     | OpGetLocal -> 24
     | OpSetLocal -> 25
     | OpGetBuiltin -> 26
+    | OpClosure -> 27
 
   let to_op = function
     | 0 -> OpConstant
@@ -91,6 +93,7 @@ module OpCode = struct
     | 24 -> OpGetLocal
     | 25 -> OpSetLocal
     | 26 -> OpGetBuiltin
+    | 27 -> OpClosure
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -128,7 +131,8 @@ let definitions =
     | OpReturn -> []
     | OpGetLocal -> [1]
     | OpSetLocal -> [1]
-    | OpGetBuiltin -> [1])
+    | OpGetBuiltin -> [1]
+    | OpClosure -> [2; 1])
 
 let make op operands =
   let operand_widths = definitions op in
@@ -174,6 +178,8 @@ let instruction_to_string offset ins =
     match List.length def with
     | 0 -> op |> OpCode.show
     | 1 -> Printf.sprintf "%s %d" (op |> OpCode.show) operands.(0)
+    | 2 ->
+      Printf.sprintf "%s %d %d" (op |> OpCode.show) operands.(0) operands.(1)
     | _ -> "" in
   (Printf.sprintf "%s %s" prefix arguments, 1 + read_bytes)
 

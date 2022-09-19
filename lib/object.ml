@@ -28,9 +28,16 @@ type t =
   | Macro            of macro
   | Error            of string
   | CompiledFunction of compiledFunction
+  | Closure          of closure
 [@@deriving show, eq]
 
 and builtin = { fn : t list -> t [@equal fun _ _ -> false] }
+[@@deriving show, eq]
+
+and closure = {
+  compiled_fn : compiledFunction;
+  free : t array;
+}
 [@@deriving show, eq]
 
 and macro = {
@@ -71,5 +78,6 @@ let decode_tag_of = function
   | Macro _ -> "Macro"
   | Error _ -> "Error"
   | CompiledFunction _ -> "CompiledFunction"
+  | Closure _ -> "Closure"
 
 let compare x y = compare (show x) (show y)

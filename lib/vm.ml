@@ -325,5 +325,6 @@ let run vm =
 
       let definition = Builtins.fns.(builtin_index) |> snd in
       vm := push definition !vm
+    | OpClosure -> (* FIXME *) ()
   done;
   !vm

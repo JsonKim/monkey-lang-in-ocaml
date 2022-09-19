@@ -13,11 +13,13 @@ let test_make () =
       [|OpConstant |> to_int; 255; 254|] |> to_bytes;
       [|OpAdd |> to_int|] |> to_bytes;
       [|OpGetLocal |> to_int; 255|] |> to_bytes;
+      [|OpClosure |> to_int; 255; 254; 255|] |> to_bytes;
     ]
     [
       Code.make OpConstant [65534];
       Code.make OpAdd [];
       Code.make OpGetLocal [255];
+      Code.make OpClosure [65534; 255];
     ]
 
 type read_operand = {
@@ -54,10 +56,15 @@ let test_instructions_to_string () =
       Code.make OpGetLocal [1];
       Code.make OpConstant [2];
       Code.make OpConstant [65534];
+      Code.make OpClosure [65535; 255];
     ]
     |> concat_bytes in
   check string "same string"
-    "0000 OpAdd\n0001 OpGetLocal 1\n0003 OpConstant 2\n0006 OpConstant 65534"
+    "0000 OpAdd\n\
+     0001 OpGetLocal 1\n\
+     0003 OpConstant 2\n\
+     0006 OpConstant 65534\n\
+     0009 OpClosure 65535 255"
     (instructinos |> Code.to_string)
 
 let () =

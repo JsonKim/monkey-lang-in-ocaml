@@ -1,7 +1,9 @@
 module Hash = Map.Make (String)
 
+let fmt_instructions fmt inst = Format.fprintf fmt "%s" (Code.to_string inst)
+
 type compiledFunction = {
-  instructions : Code.instructions;
+  instructions : Code.instructions; [@printer fmt_instructions]
   num_locals : int;
   num_parameters : int;
 }

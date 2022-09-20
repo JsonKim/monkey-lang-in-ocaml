@@ -345,5 +345,6 @@ let run vm =
       let _ = Code.read_uint_8 operand in
       move_current_frame_ip vm 3;
       push_closure const_index vm
+    | OpGetFree -> (* FIXME *) ()
   done;
   !vm

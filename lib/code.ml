@@ -33,6 +33,7 @@ module OpCode = struct
     | OpSetLocal
     | OpGetBuiltin
     | OpClosure
+    | OpGetFree
   [@@deriving show { with_path = false }]
 
   let to_int = function
@@ -64,6 +65,7 @@ module OpCode = struct
     | OpSetLocal -> 25
     | OpGetBuiltin -> 26
     | OpClosure -> 27
+    | OpGetFree -> 28
 
   let to_op = function
     | 0 -> OpConstant
@@ -94,6 +96,7 @@ module OpCode = struct
     | 25 -> OpSetLocal
     | 26 -> OpGetBuiltin
     | 27 -> OpClosure
+    | 28 -> OpGetFree
     | _ -> raise Not_OpCode
 
   let to_byte op = op |> to_int |> char_of_int
@@ -132,7 +135,8 @@ let definitions =
     | OpGetLocal -> [1]
     | OpSetLocal -> [1]
     | OpGetBuiltin -> [1]
-    | OpClosure -> [2; 1])
+    | OpClosure -> [2; 1]
+    | OpGetFree -> [1])
 
 let make op operands =
   let operand_widths = definitions op in
@@ -161,8 +165,8 @@ let read_operands operands_width ins =
     (fun (operands, offset) width ->
       let arg =
         match width with
-        | 2 -> ins |> read_uint_16
-        | 1 -> ins |> read_uint_8
+        | 2 -> Bytes.sub ins offset 2 |> read_uint_16
+        | 1 -> Bytes.sub ins offset 1 |> read_uint_8
         | _ -> raise Invalid_Operand_Width in
       (Array.append operands [|arg|], offset + width))
     (Array.make 0 0, 0)

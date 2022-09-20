@@ -154,6 +154,15 @@ module Compiler = struct
     let c = set_last_instruction op pos c in
     (c, pos)
 
+  let load_symbol symbol c =
+    let bind_location =
+      match symbol.Symbol_table.Symbol.scope with
+      | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpGetGlobal
+      | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpGetLocal
+      | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpGetBuiltin
+      | Symbol_table.Symbol_scope.FREE -> Code.OpCode.OpGetFree in
+    emit c bind_location [symbol.index]
+
   let rec compile_statement c stmt =
     match stmt with
     | Ast.ExpressionStatement { expression } ->
@@ -168,8 +177,9 @@ module Compiler = struct
         match symbol.scope with
         | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpSetGlobal
         | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpSetLocal
-        (* 실제로 let에서 BUILTIN이 사용되지는 않음 *)
-        | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpSetLocal in
+        (* 실제로 let에서 BUILTIN, FREE가 사용되지는 않음 *)
+        | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpSetLocal
+        | Symbol_table.Symbol_scope.FREE -> Code.OpCode.OpSetLocal in
       let c = { c with symbol_table } in
       Ok (emit c bind_location [symbol.index])
     | Ast.ReturnStatement { value } ->
@@ -272,15 +282,11 @@ module Compiler = struct
       change_operands c jump_pos [after_alternative_pos];
       (c, pos)
     | Ast.Identifier identifier -> (
-      let symbol = Symbol_table.resolve identifier c.symbol_table in
+      let symbol, symbol_table =
+        Symbol_table.resolve_free identifier c.symbol_table in
+      let c = { c with symbol_table } in
       match symbol with
-      | Some symbol ->
-        let bind_location =
-          match symbol.scope with
-          | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpGetGlobal
-          | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpGetLocal
-          | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpGetBuiltin in
-        Ok (emit c bind_location [symbol.index])
+      | Some symbol -> Ok (load_symbol symbol c)
       | None -> Error (Printf.sprintf "undefined variable %s" identifier))
     | Ast.Index { left; index } ->
       let open Bindings.Result in
@@ -309,15 +315,19 @@ module Compiler = struct
         else
           emit c OpReturn [] |> fst in
 
+      let free_symbols = c.symbol_table.free_symbols in
       let num_locals = c.symbol_table.num_definitions in
       let instructions, c = get_current_scope_and_leave_scope c in
+
+      Array.iter (fun symbol -> load_symbol symbol c |> ignore) free_symbols;
+
       let compiled_fn =
         Object.CompiledFunction
           { instructions; num_locals; num_parameters = List.length parameters }
       in
       let c, constant_index = add_constant c compiled_fn in
 
-      emit c OpClosure [constant_index; 0]
+      emit c OpClosure [constant_index; Array.length free_symbols]
     | Ast.Call { fn; arguments } ->
       let open Bindings.Result in
       let* c, _ = compile_expression c fn in

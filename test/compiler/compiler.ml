@@ -959,6 +959,193 @@ let test_builtins () =
     (["len([]);\npush([], 1);"; "fn() { len([]); }"]
     |> List.map (fun code -> code |> parser |> ast_to_test_compiler))
 
+let test_closures_case_1 () =
+  let open Alcotest in
+  let open Code in
+  check
+    (list (result compile_testable string))
+    "same object"
+    [
+      Ok
+        {
+          constants =
+            [|
+              Object.CompiledFunction
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpGetFree [0];
+                        make OpGetLocal [0];
+                        make OpAdd [];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 1;
+                  num_parameters = 1;
+                };
+              Object.CompiledFunction
+                {
+                  instructions =
+                    concat_bytes
+                      [
+                        make OpGetLocal [0];
+                        make OpClosure [0; 1];
+                        make OpReturnValue [];
+                      ];
+                  num_locals = 1;
+                  num_parameters = 1;
+                };
+            |];
+          instructions = concat_bytes [make OpClosure [1; 0]; make OpPop []];
+        };
+    ]
+    [
+      "fn(a) {\n  fn(b) {\n    a + b\n  }\n}\n" |> parser |> ast_to_test_compiler;
+    ]
+
+let test_closures_case_2 () =
+  let open Alcotest in
+  let open Code in
+  check
+    (result compile_testable string)
+    "same object"
+    (Ok
+       {
+         constants =
+           [|
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpGetFree [0];
+                       make OpGetFree [1];
+                       make OpAdd [];
+                       make OpGetLocal [0];
+                       make OpAdd [];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 1;
+               };
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpGetFree [0];
+                       make OpGetLocal [0];
+                       make OpClosure [0; 2];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 1;
+               };
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpGetLocal [0];
+                       make OpClosure [1; 1];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 1;
+               };
+           |];
+         instructions = concat_bytes [make OpClosure [2; 0]; make OpPop []];
+       })
+    ("fn(a) {\n  fn (b) {\n    fn (c) {\n      a + b + c\n    }\n  }\n}"
+    |> parser
+    |> ast_to_test_compiler)
+
+let test_closures_case_3 () =
+  let open Alcotest in
+  let open Code in
+  check
+    (result compile_testable string)
+    "same object"
+    (Ok
+       {
+         constants =
+           [|
+             Object.Integer 55;
+             Object.Integer 66;
+             Object.Integer 77;
+             Object.Integer 88;
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpConstant [3];
+                       make OpSetLocal [0];
+                       make OpGetGlobal [0];
+                       make OpGetFree [0];
+                       make OpAdd [];
+                       make OpGetFree [1];
+                       make OpAdd [];
+                       make OpGetLocal [0];
+                       make OpAdd [];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 0;
+               };
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpConstant [2];
+                       make OpSetLocal [0];
+                       make OpGetFree [0];
+                       make OpGetLocal [0];
+                       make OpClosure [4; 2];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 0;
+               };
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpConstant [1];
+                       make OpSetLocal [0];
+                       make OpGetLocal [0];
+                       make OpClosure [5; 1];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 0;
+               };
+           |];
+         instructions =
+           concat_bytes
+             [
+               make OpConstant [0];
+               make OpSetGlobal [0];
+               make OpClosure [6; 0];
+               make OpPop [];
+             ];
+       })
+    ("let global = 55;\n\n\
+      fn() {\n\
+      let a = 66;\n\n\
+     \  fn() {\n\
+     \    let b = 77;\n\n\
+     \    fn() {\n\
+     \      let c = 88;\n\n\
+     \      global + a + b + c;\n\
+     \    }\n\
+     \  }\n\
+      }"
+    |> parser
+    |> ast_to_test_compiler)
+
 let () =
   let open Alcotest in
   run "Compiler"
@@ -993,4 +1180,10 @@ let () =
         [test_case "let statement scopes test" `Slow test_let_statement_scopes]
       );
       ("builtins test", [test_case "builtins test" `Slow test_builtins]);
+      ( "closures test",
+        [
+          test_case "case 1" `Slow test_closures_case_1;
+          test_case "case 2" `Slow test_closures_case_2;
+          test_case "case 3" `Slow test_closures_case_3;
+        ] );
     ]

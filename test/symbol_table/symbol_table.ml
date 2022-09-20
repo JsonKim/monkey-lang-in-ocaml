@@ -154,6 +154,85 @@ let test_define_resolve_builtins () =
        second_local |> resolve "f";
      ])
 
+let test_resolve_free () =
+  let open Alcotest in
+  let open Symbol_table in
+  check
+    (list (option symbol_testable))
+    "same object"
+    [
+      Some { Symbol.name = "a"; scope = Symbol_scope.GLOBAL; index = 0 };
+      Some { Symbol.name = "b"; scope = Symbol_scope.GLOBAL; index = 1 };
+      Some { Symbol.name = "c"; scope = Symbol_scope.LOCAL; index = 0 };
+      Some { Symbol.name = "d"; scope = Symbol_scope.LOCAL; index = 1 };
+      Some { Symbol.name = "a"; scope = Symbol_scope.GLOBAL; index = 0 };
+      Some { Symbol.name = "b"; scope = Symbol_scope.GLOBAL; index = 1 };
+      Some { Symbol.name = "c"; scope = Symbol_scope.FREE; index = 0 };
+      Some { Symbol.name = "d"; scope = Symbol_scope.FREE; index = 1 };
+      Some { Symbol.name = "e"; scope = Symbol_scope.LOCAL; index = 0 };
+      Some { Symbol.name = "f"; scope = Symbol_scope.LOCAL; index = 1 };
+    ]
+    (let global = empty |> define "a" |> snd |> define "b" |> snd in
+     let first_local =
+       make_enclosed_symbol_table global
+       |> define "c"
+       |> snd
+       |> define "d"
+       |> snd in
+
+     let second_local =
+       make_enclosed_symbol_table first_local
+       |> define "e"
+       |> snd
+       |> define "f"
+       |> snd in
+
+     let f_a, first_local = first_local |> resolve_free "a" in
+     let f_b, first_local = first_local |> resolve_free "b" in
+     let f_c, first_local = first_local |> resolve_free "c" in
+     let f_d, _ = first_local |> resolve_free "d" in
+
+     let s_a, second_local = second_local |> resolve_free "a" in
+     let s_b, second_local = second_local |> resolve_free "b" in
+     let s_c, second_local = second_local |> resolve_free "c" in
+     let s_d, second_local = second_local |> resolve_free "d" in
+     let s_e, second_local = second_local |> resolve_free "e" in
+     let s_f, _ = second_local |> resolve_free "f" in
+     [f_a; f_b; f_c; f_d; s_a; s_b; s_c; s_d; s_e; s_f])
+
+let test_resolve_unresolvable_free () =
+  let open Alcotest in
+  let open Symbol_table in
+  check
+    (list (option symbol_testable))
+    "same object"
+    [
+      Some { Symbol.name = "a"; scope = Symbol_scope.GLOBAL; index = 0 };
+      Some { Symbol.name = "c"; scope = Symbol_scope.FREE; index = 0 };
+      Some { Symbol.name = "e"; scope = Symbol_scope.LOCAL; index = 0 };
+      Some { Symbol.name = "f"; scope = Symbol_scope.LOCAL; index = 1 };
+      None;
+      None;
+    ]
+    (let global = empty |> define "a" |> snd in
+     let first_local = make_enclosed_symbol_table global |> define "c" |> snd in
+
+     let second_local =
+       make_enclosed_symbol_table first_local
+       |> define "e"
+       |> snd
+       |> define "f"
+       |> snd in
+
+     let s_a, second_local = second_local |> resolve_free "a" in
+     let s_c, second_local = second_local |> resolve_free "c" in
+     let s_e, second_local = second_local |> resolve_free "e" in
+     let s_f, second_local = second_local |> resolve_free "f" in
+     let s_b, second_local = second_local |> resolve_free "b" in
+     let s_d, _ = second_local |> resolve_free "d" in
+
+     [s_a; s_c; s_e; s_f; s_b; s_d])
+
 let () =
   let open Alcotest in
   run "symbol_table"
@@ -169,5 +248,12 @@ let () =
         [
           test_case "define resolve builtin test" `Slow
             test_define_resolve_builtins;
+        ] );
+      ( "resolve free test",
+        [test_case "resolve free test" `Slow test_resolve_free] );
+      ( "resolve unresolvable free test",
+        [
+          test_case "resolve unresolvable free test" `Slow
+            test_resolve_unresolvable_free;
         ] );
     ]

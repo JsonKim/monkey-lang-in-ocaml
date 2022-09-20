@@ -27,12 +27,12 @@ let make bytecode =
   let open Compiler.Bytecode in
   let { instructions; constants } = bytecode in
   let main_fn = Object.make_compiled_function instructions in
-  let main_closure = { Object.compiled_fn = main_fn; free = [] } in
+  let main_closure = { Object.compiled_fn = main_fn; free = [||] } in
   let main_frame = Frame.make main_closure 0 in
 
   let empty_compiled_function = Object.make_compiled_function Bytes.empty in
   let empty_closure =
-    { Object.compiled_fn = empty_compiled_function; free = [] } in
+    { Object.compiled_fn = empty_compiled_function; free = [||] } in
   let frames = Array.make max_frames (Frame.make empty_closure 0) in
   frames.(0) <- main_frame;
 
@@ -208,13 +208,16 @@ let execute_call num_args vm =
   | Object.Builtin fn -> call_builtin fn num_args vm
   | _ -> raise (VM_Error "calling non-function and non-built-in")
 
-let push_closure const_index vm =
+let push_closure const_index num_free vm =
   let constant = !vm.constants.(const_index) in
   let fn =
     match constant with
     | Object.CompiledFunction fn -> fn
     | _ -> raise (VM_Error ("not a function: " ^ Object.show constant)) in
-  let closure = Object.Closure { compiled_fn = fn; free = [] } in
+  let free = Array.sub !vm.stack (!vm.sp - num_free) num_free in
+  vm := { !vm with sp = !vm.sp - num_free };
+
+  let closure = Object.Closure { compiled_fn = fn; free } in
   vm := push closure !vm
 
 let run vm =
@@ -342,9 +345,15 @@ let run vm =
       let operand = Bytes.sub (vm |> instructions) (ip + 1) 2 in
       let const_index = Code.read_uint_16 operand in
       let operand = Bytes.sub (vm |> instructions) (ip + 3) 1 in
-      let _ = Code.read_uint_8 operand in
+      let num_free = Code.read_uint_8 operand in
       move_current_frame_ip vm 3;
-      push_closure const_index vm
-    | OpGetFree -> (* FIXME *) ()
+      push_closure const_index num_free vm
+    | OpGetFree ->
+      let operand = Bytes.sub (vm |> instructions) (ip + 1) 1 in
+      let free_index = Code.read_uint_8 operand in
+      move_current_frame_ip vm 1;
+
+      let current_closure = (!vm |> current_frame).cl in
+      vm := push current_closure.free.(free_index) !vm
   done;
   !vm

@@ -404,6 +404,52 @@ let test_builtin_functions () =
       Object.Error "argument to rest must be Array, got Integer";
     ]
 
+let test_closures () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "let newClosure = fn(a) { fn() { a; } }\n\
+        let closure = newClosure(99);\n\
+        closure();";
+       "let newAdder = fn(a, b) { fn(c) { a + b + c }; };\n\
+        let adder = newAdder(1, 2);\n\
+        adder(8)";
+       "let newAdderOuter = fn(a, b) {\n\
+        let c = a + b;\n\
+       \  fn(d) {\n\
+       \    let e = d + c;\n\
+       \    fn(f) { e + f; };\n\
+       \  };\n\
+        };\n\
+        let newAdderInner = newAdderOuter(1, 2)\n\
+        let adder = newAdderInner(3);\n\
+        adder(8);";
+       "let a = 1;\n\
+        let newAdderOuter = fn(b) {\n\
+       \  fn(c) {\n\
+       \    fn(d) { a + b + c + d };\n\
+       \  };\n\
+        };\n\
+        let newAdderInner = newAdderOuter(2)\n\
+        let adder = newAdderInner(3);\n\
+        adder(8);";
+       "let newClosure = fn(a, b) {\n\
+       \  let one = fn() { a; };\n\
+       \  let two = fn() { b; };\n\
+       \  fn() { one() + two(); };\n\
+        };\n\
+        let closure = newClosure(9, 90);\n\
+        closure();";
+     ]
+    |> List.map parse_with_vm_error)
+    [
+      Object.Integer 99;
+      Object.Integer 11;
+      Object.Integer 14;
+      Object.Integer 14;
+      Object.Integer 99;
+    ]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -462,4 +508,5 @@ let () =
         ] );
       ( "builtin functions test",
         [test_case "builtin functions test" `Slow test_builtin_functions] );
+      ("closures test", [test_case "closures test" `Slow test_closures]);
     ]

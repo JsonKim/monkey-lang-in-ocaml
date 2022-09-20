@@ -450,6 +450,33 @@ let test_closures () =
       Object.Integer 99;
     ]
 
+let test_recursive_functions () =
+  let open Alcotest in
+  check (list object_testable) "same object"
+    ([
+       "let countDown = fn(x) {\n\
+       \  if (x == 0) {\n\
+       \    return 0;\n\
+       \  } else {\n\
+       \    countDown(x - 1);\n\
+       \  }\n\
+        };\n\
+        countDown(1);";
+       "let countDown = fn(x) {\n\
+       \  if (x == 0) {\n\
+       \    return 0;\n\
+       \  } else {\n\
+       \    countDown(x - 1);\n\
+       \  }\n\
+        };\n\
+        let wrapper = fn() {\n\
+       \  countDown(1);\n\
+        };\n\
+        wrapper();";
+     ]
+    |> List.map parse_with_vm_error)
+    [Object.Integer 0; Object.Integer 0]
+
 let () =
   let open Alcotest in
   run "Code"
@@ -509,4 +536,6 @@ let () =
       ( "builtin functions test",
         [test_case "builtin functions test" `Slow test_builtin_functions] );
       ("closures test", [test_case "closures test" `Slow test_closures]);
+      ( "recursive functions test",
+        [test_case "recursive functions test" `Slow test_recursive_functions] );
     ]

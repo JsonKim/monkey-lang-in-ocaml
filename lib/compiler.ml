@@ -171,8 +171,9 @@ module Compiler = struct
       emit c OpPop []
     | Ast.LetStatement { identifier; value } ->
       let open Bindings.Result in
-      let* c, _ = compile_expression c value in
       let symbol, symbol_table = Symbol_table.define identifier c.symbol_table in
+      let c = { c with symbol_table } in
+      let* c, _ = compile_expression c value in
       let bind_location =
         match symbol.scope with
         | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpSetGlobal
@@ -180,7 +181,6 @@ module Compiler = struct
         (* 실제로 let에서 BUILTIN, FREE가 사용되지는 않음 *)
         | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpSetLocal
         | Symbol_table.Symbol_scope.FREE -> Code.OpCode.OpSetLocal in
-      let c = { c with symbol_table } in
       Ok (emit c bind_location [symbol.index])
     | Ast.ReturnStatement { value } ->
       let open Bindings.Result in

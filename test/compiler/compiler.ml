@@ -1146,6 +1146,110 @@ let test_closures_case_3 () =
     |> parser
     |> ast_to_test_compiler)
 
+let test_recursive_functions_case_1 () =
+  let open Alcotest in
+  let open Code in
+  check
+    (result compile_testable string)
+    "same object"
+    (Ok
+       {
+         constants =
+           [|
+             Object.Integer 1;
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpCurrentClosure [];
+                       make OpGetLocal [0];
+                       make OpConstant [0];
+                       make OpSub [];
+                       make OpCall [1];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 1;
+               };
+             Object.Integer 1;
+           |];
+         instructions =
+           concat_bytes
+             [
+               make OpClosure [1; 0];
+               make OpSetGlobal [0];
+               make OpGetGlobal [0];
+               make OpConstant [2];
+               make OpCall [1];
+               make OpPop [];
+             ];
+       })
+    ("let countDown = fn(x) { countDown(x - 1); };\ncountDown(1);"
+    |> parser
+    |> ast_to_test_compiler)
+
+let test_recursive_functions_case_2 () =
+  let open Alcotest in
+  let open Code in
+  check
+    (result compile_testable string)
+    "same object"
+    (Ok
+       {
+         constants =
+           [|
+             Object.Integer 1;
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpCurrentClosure [];
+                       make OpGetLocal [0];
+                       make OpConstant [0];
+                       make OpSub [];
+                       make OpCall [1];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 1;
+               };
+             Object.Integer 1;
+             Object.CompiledFunction
+               {
+                 instructions =
+                   concat_bytes
+                     [
+                       make OpClosure [1; 0];
+                       make OpSetLocal [0];
+                       make OpGetLocal [0];
+                       make OpConstant [2];
+                       make OpCall [1];
+                       make OpReturnValue [];
+                     ];
+                 num_locals = 1;
+                 num_parameters = 0;
+               };
+           |];
+         instructions =
+           concat_bytes
+             [
+               make OpClosure [3; 0];
+               make OpSetGlobal [0];
+               make OpGetGlobal [0];
+               make OpCall [0];
+               make OpPop [];
+             ];
+       })
+    ("let wrapper = fn() {\n\
+     \  let countDown = fn(x) { countDown(x - 1); };\n\
+     \  countDown(1);\n\
+      };\n\
+      wrapper();"
+    |> parser
+    |> ast_to_test_compiler)
+
 let () =
   let open Alcotest in
   run "Compiler"
@@ -1185,5 +1289,10 @@ let () =
           test_case "case 1" `Slow test_closures_case_1;
           test_case "case 2" `Slow test_closures_case_2;
           test_case "case 3" `Slow test_closures_case_3;
+        ] );
+      ( "recursive functions test",
+        [
+          test_case "case1" `Slow test_recursive_functions_case_1;
+          test_case "case2" `Slow test_recursive_functions_case_2;
         ] );
     ]

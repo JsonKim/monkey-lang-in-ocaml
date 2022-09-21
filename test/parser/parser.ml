@@ -42,6 +42,7 @@ let test_let_statements () =
             value =
               Function
                 {
+                  name = "f";
                   parameters = ["a"; "b"];
                   body =
                     [
@@ -83,6 +84,7 @@ let test_return_statements () =
             value =
               Function
                 {
+                  name = "";
                   parameters = ["x"; "y"];
                   body =
                     [
@@ -544,6 +546,7 @@ let test_function_literal_expression () =
           expression =
             Ast.Function
               {
+                name = "";
                 parameters = [];
                 body =
                   [
@@ -557,6 +560,7 @@ let test_function_literal_expression () =
           expression =
             Ast.Function
               {
+                name = "";
                 parameters = ["x"; "y"];
                 body =
                   [

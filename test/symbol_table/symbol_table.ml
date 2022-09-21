@@ -233,6 +233,27 @@ let test_resolve_unresolvable_free () =
 
      [s_a; s_c; s_e; s_f; s_b; s_d])
 
+let test_define_and_resolve_function_name () =
+  let open Alcotest in
+  let open Symbol_table in
+  check
+    (list (option symbol_testable))
+    "same objet"
+    [Some { Symbol.name = "a"; scope = Symbol_scope.FUNCTION; index = 0 }]
+    (let global = empty |> define_function_name "a" |> snd in
+     [global |> resolve_free "a" |> fst])
+
+let test_shadowing_function_name () =
+  let open Alcotest in
+  let open Symbol_table in
+  check
+    (list (option symbol_testable))
+    "same objet"
+    [Some { Symbol.name = "a"; scope = Symbol_scope.GLOBAL; index = 0 }]
+    (let global =
+       empty |> define_function_name "a" |> snd |> define "a" |> snd in
+     [global |> resolve_free "a" |> fst])
+
 let () =
   let open Alcotest in
   run "symbol_table"
@@ -255,5 +276,15 @@ let () =
         [
           test_case "resolve unresolvable free test" `Slow
             test_resolve_unresolvable_free;
+        ] );
+      ( "define and resolve function name test",
+        [
+          test_case "define and resolve function name test" `Slow
+            test_define_and_resolve_function_name;
+        ] );
+      ( "shadowing function name test",
+        [
+          test_case "shadowing function name test" `Slow
+            test_shadowing_function_name;
         ] );
     ]

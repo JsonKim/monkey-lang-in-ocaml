@@ -355,5 +355,8 @@ let run vm =
 
       let current_closure = (!vm |> current_frame).cl in
       vm := push current_closure.free.(free_index) !vm
+    | OpCurrentClosure ->
+      let current_closure = (!vm |> current_frame).cl in
+      vm := push (Object.Closure current_closure) !vm
   done;
   !vm

@@ -473,9 +473,20 @@ let test_recursive_functions () =
        \  countDown(1);\n\
         };\n\
         wrapper();";
+       "let wrapper = fn() {\n\
+       \  let countDown = fn(x) {\n\
+       \    if (x == 0) {\n\
+       \      return 0;\n\
+       \    } else {\n\
+       \      countDown(x - 1);\n\
+       \    }\n\
+       \  };\n\
+       \  countDown(1);\n\
+        };\n\
+        wrapper();";
      ]
     |> List.map parse_with_vm_error)
-    [Object.Integer 0; Object.Integer 0]
+    [Object.Integer 0; Object.Integer 0; Object.Integer 0]
 
 let () =
   let open Alcotest in

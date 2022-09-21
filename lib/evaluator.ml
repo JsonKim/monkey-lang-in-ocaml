@@ -78,7 +78,7 @@ and eval_expression env = function
       match Builtin.find_opt ident fns with
       | Some (Object.Builtin { fn }) -> (Object.Builtin { fn }, env)
       | _ -> (Object.Error ("identifier not found: " ^ ident), env)))
-  | Function { parameters; body } ->
+  | Function { parameters; body; name = _ } ->
     (Object.Function { parameters; body; env }, env)
   | Call { fn; arguments } -> (
     match fn with

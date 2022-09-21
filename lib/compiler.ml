@@ -155,13 +155,18 @@ module Compiler = struct
     (c, pos)
 
   let load_symbol symbol c =
-    let bind_location =
+    let bind_location, params =
       match symbol.Symbol_table.Symbol.scope with
-      | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpGetGlobal
-      | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpGetLocal
-      | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpGetBuiltin
-      | Symbol_table.Symbol_scope.FREE -> Code.OpCode.OpGetFree in
-    emit c bind_location [symbol.index]
+      | Symbol_table.Symbol_scope.GLOBAL ->
+        (Code.OpCode.OpGetGlobal, [symbol.index])
+      | Symbol_table.Symbol_scope.LOCAL ->
+        (Code.OpCode.OpGetLocal, [symbol.index])
+      | Symbol_table.Symbol_scope.BUILTIN ->
+        (Code.OpCode.OpGetBuiltin, [symbol.index])
+      | Symbol_table.Symbol_scope.FREE -> (Code.OpCode.OpGetFree, [symbol.index])
+      | Symbol_table.Symbol_scope.FUNCTION -> (Code.OpCode.OpCurrentClosure, [])
+    in
+    emit c bind_location params
 
   let rec compile_statement c stmt =
     match stmt with
@@ -178,9 +183,10 @@ module Compiler = struct
         match symbol.scope with
         | Symbol_table.Symbol_scope.GLOBAL -> Code.OpCode.OpSetGlobal
         | Symbol_table.Symbol_scope.LOCAL -> Code.OpCode.OpSetLocal
-        (* 실제로 let에서 BUILTIN, FREE가 사용되지는 않음 *)
+        (* 실제로 let에서 BUILTIN, FREE, FUNCTION이 사용되지는 않음 *)
         | Symbol_table.Symbol_scope.BUILTIN -> Code.OpCode.OpSetLocal
-        | Symbol_table.Symbol_scope.FREE -> Code.OpCode.OpSetLocal in
+        | Symbol_table.Symbol_scope.FREE -> Code.OpCode.OpSetLocal
+        | Symbol_table.Symbol_scope.FUNCTION -> Code.OpCode.OpSetLocal in
       Ok (emit c bind_location [symbol.index])
     | Ast.ReturnStatement { value } ->
       let open Bindings.Result in
@@ -293,15 +299,21 @@ module Compiler = struct
       let* c, _ = compile_expression c left in
       let+ c, _ = compile_expression c index in
       emit c OpIndex []
-    | Ast.Function { parameters; body } ->
+    | Ast.Function { parameters; body; name } ->
       let open Bindings.Result in
       let c = enter_scope c in
+
+      let symbol_table =
+        if name = "" then
+          c.symbol_table
+        else
+          Symbol_table.define_function_name name c.symbol_table |> snd in
+      let c = { c with symbol_table } in
 
       let symbol_table =
         List.fold_left
           (fun acc p -> Symbol_table.define p acc |> snd)
           c.symbol_table parameters in
-
       let c = { c with symbol_table } in
 
       let+ c, _ = compile_statements c body in

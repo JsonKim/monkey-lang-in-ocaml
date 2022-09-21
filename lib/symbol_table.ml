@@ -4,6 +4,7 @@ module Symbol_scope = struct
     | LOCAL
     | BUILTIN
     | FREE
+    | FUNCTION
   [@@deriving show, eq]
 
   let compare a z = compare (a |> show) (z |> show)
@@ -81,6 +82,11 @@ let define_builtin index name s =
   let symbol = { Symbol.name; index; scope = BUILTIN } in
   let store = s.store |> Store.add name symbol in
   (symbol, { s with store })
+
+let define_function_name name s =
+  let symbol = { Symbol.name; index = 0; scope = FUNCTION } in
+  let store = Store.update symbol.name (fun _ -> Some symbol) s.store in
+  (Some symbol, { s with store })
 
 let resolve_local name s = Store.find_opt name s.store
 

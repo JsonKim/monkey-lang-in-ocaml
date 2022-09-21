@@ -93,6 +93,10 @@ let rec parse_let_statement p =
       match parse_expression lowest p with
       | p, Some value ->
         let p = if peek_token_is Token.Semicolon p then p |> next_token else p in
+        let value =
+          match value with
+          | Ast.Function fn -> Ast.Function { fn with name = identifier }
+          | _ -> value in
         (p, Some (Ast.LetStatement { identifier; value }))
       | p, None -> (p, None)
     else
@@ -202,7 +206,8 @@ and parse_function_literal p =
       let p, is_expected = expect_token Token.LBrace p in
       if is_expected then
         match parse_block_statement p with
-        | p, Some body -> (p, Some (Ast.Function { parameters; body }))
+        | p, Some body ->
+          (p, Some (Ast.Function { parameters; body; name = "" }))
         | p, None -> (p, None)
       else
         (p, None)

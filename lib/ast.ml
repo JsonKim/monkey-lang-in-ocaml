@@ -49,6 +49,7 @@ and expression =
       alternative : blockStatement option;
     }
   | Function   of {
+      name : string;
       parameters : identifier list;
       body : blockStatement;
     }

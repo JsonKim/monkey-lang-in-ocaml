@@ -488,6 +488,24 @@ let test_recursive_functions () =
     |> List.map parse_with_vm_error)
     [Object.Integer 0; Object.Integer 0; Object.Integer 0]
 
+let test_recursive_fibonacci () =
+  let open Alcotest in
+  check object_testable "same object"
+    ("let fibonacci = fn(x) {\n\
+     \  if (x == 0) {\n\
+     \    return 0;\n\
+     \  } else {\n\
+     \    if (x == 1) {\n\
+     \      return 1;\n\
+     \    } else {\n\
+     \      fibonacci(x - 1) + fibonacci(x - 2);\n\
+     \    }\n\
+     \  }\n\
+      };\n\
+      fibonacci(15);"
+    |> parse_with_vm_error)
+    (Object.Integer 610)
+
 let () =
   let open Alcotest in
   run "Code"
@@ -549,4 +567,6 @@ let () =
       ("closures test", [test_case "closures test" `Slow test_closures]);
       ( "recursive functions test",
         [test_case "recursive functions test" `Slow test_recursive_functions] );
+      ( "recursive fibonacci test",
+        [test_case "recursive fibonacci test" `Slow test_recursive_fibonacci] );
     ]

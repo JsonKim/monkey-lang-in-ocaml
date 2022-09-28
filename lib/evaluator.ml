@@ -78,8 +78,8 @@ and eval_expression env = function
       match Builtin.find_opt ident fns with
       | Some (Object.Builtin { fn }) -> (Object.Builtin { fn }, env)
       | _ -> (Object.Error ("identifier not found: " ^ ident), env)))
-  | Function { parameters; body; name = _ } ->
-    (Object.Function { parameters; body; env }, env)
+  | Function { parameters; body; name } ->
+    (Object.Function { parameters; body; env; name }, env)
   | Call { fn; arguments } -> (
     match fn with
     | Ast.Identifier "quote" -> quote env arguments
@@ -117,8 +117,10 @@ and eval_expressions env args =
 
 and apply_function fn args =
   match fn with
-  | Object.Function { parameters; body; env } -> (
+  | Object.Function { parameters; body; env; name } -> (
     let env = extend_function_env (parameters, args) env in
+    let env = if name = "" then env else Environment.set name fn env in
+
     match eval_block_statement env body |> fst with
     | Object.Return value -> value
     | obj -> obj)

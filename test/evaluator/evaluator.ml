@@ -212,6 +212,7 @@ let test_function_object () =
                 };
             ];
           env = { Environment.env = []; outer = None };
+          name = "";
         };
     ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
@@ -345,6 +346,27 @@ let test_quote_unqute () =
     ]
     (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
 
+let test_recursive_fibonacci () =
+  let code =
+    [
+      "let fibonacci = fn(x) {\n\
+      \  if (x == 0) {\n\
+      \    return 0;\n\
+      \  } else {\n\
+      \    if (x == 1) {\n\
+      \      return 1;\n\
+      \    } else {\n\
+      \      fibonacci(x - 1) + fibonacci(x - 2);\n\
+      \    }\n\
+      \  }\n\
+       };\n\
+       fibonacci(15);";
+    ] in
+
+  Alcotest.(check (list evaluator_testable))
+    "same object" [Object.Integer 610]
+    (code |> List.map (fun code -> code |> Lexer.make |> To_test.eval_for_error))
+
 let () =
   let open Alcotest in
   run "Parser"
@@ -358,4 +380,6 @@ let () =
       ("error test", [test_case "error" `Slow test_error]);
       ("quote test", [test_case "quote" `Slow test_quote]);
       ("quote-unquote test", [test_case "quote-unquote" `Slow test_quote_unqute]);
+      ( "recursive fibonacci test",
+        [test_case "recursive fibonacci" `Slow test_recursive_fibonacci] );
     ]

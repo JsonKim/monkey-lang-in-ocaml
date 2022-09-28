@@ -22,6 +22,7 @@ type t =
       parameters : Ast.identifier list;
       body : Ast.blockStatement;
       env : t Environment.t;
+      name : Ast.identifier;
     }
   | Builtin          of builtin
   | Array            of t list
